@@ -33,7 +33,7 @@
             fprintf(stderr,"Spatny format parametru\n");\
             exit(X);\
         default:\
-            fprintf(stderr,"Jina chyba\n");\
+            fprintf(stderr,"Spatny request\n");\
             exit(X);\
 };
 

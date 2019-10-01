@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 3.15)
-project(main)
+project(isa)
 
 set(CMAKE_CXX_STANDARD 14)
 
-add_executable(isaserver isaserver.cpp ServerArgumentParser.h Error.h ClientArgumentParser.h isaclient.cpp)
+add_executable(isaserver isaserver.cpp ServerArgumentParser.h Error.h)
+add_executable(isaclient isaclient.cpp ClientArgumentParser.h Error.h)
