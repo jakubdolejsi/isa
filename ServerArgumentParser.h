@@ -16,6 +16,12 @@
 
 using namespace std;
 
+
+
+#define PRINT_HELP\
+            cout << "Naaapoveda "<< endl;\
+
+
 class ServerArgumentParser {
 
 private:
@@ -30,63 +36,85 @@ public:
     }
 
     void parse() {
-        this->validateArgumentsCount();
-        this->validatePortOption();
-        this->validateArgumentsArray();
+        bool helpOption = false;
+        if(this->validateArgumentCount() == 4) {
+            helpOption = this->checkForHelpOption();
+        }
+        if(!this->argvArrayIter()){
+            EXIT(UNKNOWN_OPTION)
+        }
+        this->validatePortRange();
+        if(helpOption)
+            cout << "bude napoveda"<< endl;
     }
 
-    int getPort()
-    {
-        return  this->port;
+    bool checkForHelpOption() {
+        if (strncmp(this->argv[1], "-h", strlen(this->argv[1])) == 0) {
+            return true;
+        } else if(strncmp(this->argv[3], "-h", strlen(this->argv[3])) == 0){
+            return true;
+        }
+        EXIT(UNKNOWN_OPTION)
+    }
+
+
+    int getPort() {
+        return this->port;
     }
 
 private:
-    void validateArgumentsCount() {
-        if (this->argc != 3) {
-            EXIT(ARGUMENT_ERROR)
-        }
-    }
 
-    void validateArgumentsArray() {
-        this->getIntegerPort();
-        this->validatePortRange();
-
-        const char *p(this->argv[1]);
-
-        if (strncmp(p, "-p", strlen(p)) != 0 ) {
-            EXIT(ARGUMENT_ERROR)
-        }
-    }
-
-    void checkForHelOption()
+    bool argvArrayIter()
     {
-        for (int i = 0; i < argc; ++i) {
-            if(strncmp(this->argv[i],"-h",strlen(this->argv[i])) == 0){
-
+        bool foundP = false;
+        char *option = "-p";
+        for (int i = 0; i < this->argc; ++i) {
+            int len = this->compareLength(this->argv[i], option);
+            if(len > 0) {
+                if (strncmp(this->argv[i], option, len) == 0) {
+                    this->validatePort(this->argv[i + 1]);
+                    foundP = true;
+                    break;
+                }
             }
         }
+        return foundP;
     }
 
-    void getIntegerPort() {
-        string ports(this->argv[2]);
+    int compareLength(char *optionP, char *option) {
+        if (strlen(optionP) == strlen(option)) {
+            return strlen(option);
+        } else {
+            return 0;
+        }
+    }
 
+    void validatePort(char *inPort){
+        if(inPort == NULL){
+            EXIT(WRONG_FORMAT)
+        }
+        string ports(inPort);
         for (char i : ports)
             if (isdigit(i) == 0) {
-                EXIT(ARGUMENT_ERROR)
+                EXIT(UNKNOWN_PORT_FORMAT)
             }
         this->port = stoi(ports);
     }
 
     void validatePortRange() {
-        if (this->port <= 0 && this->port >= 65535){
-            EXIT(ARGUMENT_ERROR)
+        if (this->port <= 0 || this->port >= 65535){
+            EXIT(WRONG_PORT_RANGE)
         }
     }
 
-    void validatePortOption()
+    int validateArgumentCount()
     {
-        if(strncmp(this->argv[1], "-p", strlen(this->argv[1])) != 0){
-            EXIT(ARGUMENT_ERROR)
+        if(this->argc == 3) {
+            return 3;
+        } else if (this->argc == 4){
+            return  4;
+        } else {
+            EXIT(ARGUMENT_COUNT_ERROR)
         }
     }
 };

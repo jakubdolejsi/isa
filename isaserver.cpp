@@ -1,8 +1,5 @@
 #include "ServerArgumentParser.h"
 
-#define RETURN_OK\
-        cout << "vse ok" << endl;\
-        return 0;\
 
 using namespace std;
 
