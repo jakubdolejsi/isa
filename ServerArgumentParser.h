@@ -45,7 +45,7 @@ public:
         }
         this->validatePortRange();
         if(helpOption)
-            cout << "bude napoveda"<< endl;
+            PRINT_HELP
     }
 
     bool checkForHelpOption() {
@@ -102,7 +102,7 @@ private:
     }
 
     void validatePortRange() {
-        if (this->port <= 0 || this->port >= 65535){
+        if (this->port <= 0 || this->port > 65535){
             EXIT(WRONG_PORT_RANGE)
         }
     }
