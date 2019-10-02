@@ -25,7 +25,7 @@ using namespace std;
 class ServerArgumentParser {
 
 private:
-    int port;
+    int port{};
     char **argv;
     int argc;
 
@@ -90,7 +90,7 @@ private:
     }
 
     void validatePort(char *inPort){
-        if(inPort == NULL){
+        if(inPort == nullptr){
             EXIT(WRONG_FORMAT)
         }
         string ports(inPort);
