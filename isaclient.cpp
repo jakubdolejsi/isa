@@ -4,8 +4,6 @@
 #include <iostream>
 #include "ClientArgumentParser.h"
 
-using namespace std;
-
 
 int main(int argc, char **argv) {
 
@@ -16,9 +14,9 @@ int main(int argc, char **argv) {
 
     Client client = clientArgumentParser.createClient();
     client.getHostByIp();
-    client.connect();
+    client.connectToServer();
 
     DUMP_REQUEST(client)
 
-    RETURN_OK
+//    RETURN_OK
 }

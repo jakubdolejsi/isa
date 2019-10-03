@@ -12,17 +12,29 @@
 #include <cstring>
 #include <string>
 #include <arpa/inet.h>
+#include <unistd.h>
 
+#define SA struct sockaddr
+#define BUF_SIZE 4096
+
+#define CREATE_SOCK_ERR "An error occured while creating socket, check your internet connection"
+#define CONNECT_SOCK_ERR "Check server availability or rigthness of specified ports and try again"
 
 #define DUMP_REQUEST(C)\
-            cout << "Sending request on " << C.getHost() << " on port "<< C.getPort() << " and IP: "<< C.getHostByIp() << " ..." << endl;\
-            cout <<  C.getRequest() <<endl;
+            cout << " Sending request on " << C.getHost() << " on port "<< C.getPort() << " and IP: "<< C.getHostByIp() << " ..." << endl;\
+            cout << " Request: " <<C.getRequest() <<endl;
+
+
+#define SOCKET_ERR(P_TEXT, M_TEXT)\
+            perror(P_TEXT);\
+            fprintf(stderr, M_TEXT);\
+            exit(13);\
 
 
 using namespace std;
 
-class Client
-{
+class Client {
+
 private:
     string request;
     string host;
@@ -31,9 +43,8 @@ private:
     char *ip;
 
 public:
-    Client(string command, string host, int port, string content = "")
-    {
-        this->request = command;
+    Client(string request, string host, int port, string content = "") {
+        this->request = request;
         this->host = host;
         this->port = port;
         this->content = content;
@@ -41,7 +52,7 @@ public:
 
 
     string getRequest() {
-        return  (this->request);
+        return (this->request);
     }
 
     string getHost() {
@@ -53,49 +64,74 @@ public:
     }
 
 
-    char *getHostByIp()
-    {
+    char *getHostByIp() {
         hostent *adr;
         char *ip = nullptr;
         struct in_addr **adressList;
         char *hostname = const_cast<char *>(this->host.c_str());
 
-        if((adr = gethostbyname(hostname)) == nullptr){
+        if ((adr = gethostbyname(hostname)) == nullptr) {
             exit(40);
         }
-        ip = inet_ntoa(*((struct in_addr*) adr->h_addr_list[0]));
+        ip = inet_ntoa(*((struct in_addr *) adr->h_addr_list[0]));
         this->ip = ip;
 
         return (this->ip);
     }
 
-    void connect() {
-        struct sockaddr_in addr = this->fillStruct();
+    void connectToServer() {
+        char buf[BUF_SIZE];
         int sockfd = this->createSocket();
-        this->bindSocket(sockfd, addr);
+
+        struct sockaddr_in addr = this->fillStruct();
+
+        this->Connect(sockfd, addr);
+//        this->str_cli(stdin, sockfd);
+
+        char cstr[this->request.size() + 1];
+        strcpy(cstr, this->request.c_str());    // or pass &s[0]
+
+        this->sendRequest(sockfd, cstr);
+
+        while (recv(sockfd, buf, BUF_SIZE, 0) > 0) {
+            fputs(buf, stdout);
+            memset(buf, 0, BUF_SIZE);
+        }
+        close(sockfd);
     }
+
+
 private:
+
+    void sendRequest(int sockfd, char *body) {
+        send(sockfd, body, strlen(body), 0);
+    }
+
     sockaddr_in fillStruct() {
-        struct sockaddr_in addr;
-        int s;
+        struct sockaddr_in serverAddr;
 
-        addr.sin_family = AF_INET;
-        addr.sin_port = htons(this->port);
-        inet_aton(this->ip, reinterpret_cast<in_addr *>(&addr.sin_addr.s_addr));
+        bzero(&serverAddr, sizeof(serverAddr));
+        serverAddr.sin_family = AF_INET;
+        serverAddr.sin_port = htons(this->port);
+        inet_aton(this->ip, reinterpret_cast<in_addr *>(&serverAddr.sin_addr.s_addr)); // naplneni serverAddr.sin_addr
 
-        return addr;
+        return (serverAddr);
     }
 
     int createSocket() {
-        int s;
-        if((s = socket(AF_INET, SOCK_STREAM, 0)) < 0){
-            exit(60);
+        int sockfd;
+        int option = 1;
+        if ((sockfd = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
+            SOCKET_ERR("Creating socket error", CREATE_SOCK_ERR)
         }
-        return s;
+//        setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &option, sizeof(option));
+        return sockfd;
     }
 
-    void bindSocket(int sockfd, sockaddr_in addr) {
-        bind(sockfd, (struct sockaddr *)& addr, sizeof(addr));
+    void Connect(int sockfd, sockaddr_in serverAddr) {
+        int conn = connect(sockfd, (SA *) &serverAddr, sizeof(serverAddr));
+        if (conn < 0) {
+            SOCKET_ERR("Connection error", CONNECT_SOCK_ERR)
+        }
     }
-
 };

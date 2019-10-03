@@ -13,6 +13,7 @@
 #include <algorithm>
 #include <cstring>
 #include "Error.h"
+#include "Server.h"
 
 using namespace std;
 
@@ -57,9 +58,8 @@ public:
         EXIT(UNKNOWN_OPTION)
     }
 
-
-    int getPort() {
-        return this->port;
+    Server createServer() {
+        return (Server(this->port));
     }
 
 private:
