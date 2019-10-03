@@ -1,7 +1,6 @@
 //
 // Created by jakub on 01.10.19.
 //
-#include <iostream>
 #include "ClientArgumentParser.h"
 
 
@@ -13,10 +12,10 @@ int main(int argc, char **argv) {
     clientArgumentParser.parse();
 
     Client client = clientArgumentParser.createClient();
-    client.getHostByIp();
+    client.setIpByHost();
     client.connectToServer();
 
-    DUMP_REQUEST(client)
+//    DUMP_REQUEST(client)
 
 //    RETURN_OK
 }

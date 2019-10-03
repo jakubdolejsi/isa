@@ -13,15 +13,17 @@
 #include <string>
 #include <arpa/inet.h>
 #include <unistd.h>
+#include <iostream>
 
 #define SA struct sockaddr
 #define BUF_SIZE 4096
 
-#define CREATE_SOCK_ERR "An error occured while creating socket, check your internet connection"
-#define CONNECT_SOCK_ERR "Check server availability or rigthness of specified ports and try again"
+#define CREATE_SOCK_ERR "An error occured while creating socket, check your internet connection\n"
+#define CONNECT_SOCK_ERR "Check server availability or rightness of specified ports and try again\n"
+#define RECV_SOCK_ERR "An error occured when recieving data from server\n"
 
 #define DUMP_REQUEST(C)\
-            cout << " Sending request on " << C.getHost() << " on port "<< C.getPort() << " and IP: "<< C.getHostByIp() << " ..." << endl;\
+            cout << " Sending request on " << C.getHost() << " on port "<< C.getPort() << " and IP: "<< C.setIpByHost() << " ..." << endl;\
             cout << " Request: " <<C.getRequest() <<endl;
 
 
@@ -50,7 +52,7 @@ public:
         this->content = content;
     }
 
-
+    // ------------------------ DUMP METHODS------------------------------------------
     string getRequest() {
         return (this->request);
     }
@@ -62,9 +64,10 @@ public:
     int getPort() {
         return (this->port);
     }
+// -----------------------------------------------------------------------------------
 
 
-    char *getHostByIp() {
+    char *setIpByHost() {
         hostent *adr;
         char *ip = nullptr;
         struct in_addr **adressList;
@@ -86,17 +89,17 @@ public:
         struct sockaddr_in addr = this->fillStruct();
 
         this->Connect(sockfd, addr);
-//        this->str_cli(stdin, sockfd);
 
         char cstr[this->request.size() + 1];
-        strcpy(cstr, this->request.c_str());    // or pass &s[0]
+        strcpy(cstr, this->request.c_str());
 
         this->sendRequest(sockfd, cstr);
 
-        while (recv(sockfd, buf, BUF_SIZE, 0) > 0) {
-            fputs(buf, stdout);
-            memset(buf, 0, BUF_SIZE);
+        if (recv(sockfd, buf, BUF_SIZE, 0) < 0) {
+            SOCKET_ERR("Recieving socket error: ", RECV_SOCK_ERR);
         }
+        cout << "Recieving data from server: "<< buf << endl;
+        memset(buf, 0, BUF_SIZE);
         close(sockfd);
     }
 
@@ -125,7 +128,7 @@ private:
             SOCKET_ERR("Creating socket error", CREATE_SOCK_ERR)
         }
 //        setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &option, sizeof(option));
-        return sockfd;
+        return (sockfd);
     }
 
     void Connect(int sockfd, sockaddr_in serverAddr) {

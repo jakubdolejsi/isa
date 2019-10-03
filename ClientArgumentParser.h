@@ -320,7 +320,7 @@ private:
         i++;
         this->nullCheck(inCommand[i]);
         char *content = inCommand[i];
-        this->request = string("PUT /board/").append(name).append(id);
+        this->request = string("PUT /board/").append(name).append("/").append(id).append("/").append(content);
 //        cout << " ------------------------------------" << endl;
 //        cout << " sending request " << this->request << endl;
 //        cout << " <name> : " << name << endl;
