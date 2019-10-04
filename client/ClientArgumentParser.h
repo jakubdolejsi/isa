@@ -8,7 +8,7 @@
 #endif //MAIN_CLIENTARGUMENTPARSER_H
 
 #include <cstring>
-#include "Error.h"
+#include "../error/Error.h"
 #include "Client.h"
 
 

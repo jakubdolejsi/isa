@@ -12,7 +12,7 @@
 #include <iostream>
 #include <algorithm>
 #include <cstring>
-#include "Error.h"
+#include "../error/Error.h"
 #include "Server.h"
 
 using namespace std;

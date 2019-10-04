@@ -30,7 +30,12 @@ public:
 
     string process() {
         string response;
-        if (this->request.substr(START_POS, GET_LEN) == "GET") {
+        char *method;
+        char buf[this->request.size() + 1];
+        strcpy(buf, this->request.c_str());
+
+        method = strtok(buf, " ");
+        if (strcmp(method, "GET") == 0) {
             response = this->processGET(this->request.substr(GET_LEN + 1));
         } else if (this->request.substr(START_POS, POST_LEN) == "POST") {
             response = this->processPOST(this->request.substr(POST_LEN + 1));
@@ -39,6 +44,7 @@ public:
         } else if (this->request.substr(START_POS, DELETE_LEN) == "DELETE") {
             response = this->processDELETE(this->request.substr(DELETE_LEN + 1));
         } else {
+            response = "chyba kamo vole";
             // TODO ERROR!
         }
         return (response);
@@ -48,25 +54,25 @@ private:
 
 
     string processPUT(string body) {
-        string msg = "Here is your response to PUT request:\nDATAAAAA";
+        string msg = "HTTP/1.1 200 OK\nContent-Type: text/plain\nContent-Length: 12\n\nResponse to PUT request!";
 
         return (msg);
     }
 
     string processPOST(string body) {
-        string msg = "Here is your response to POST request:\nDATAAAAA";
+        string msg = "HTTP/1.1 200 OK\nContent-Type: text/plain\nContent-Length: 12\n\nResponse to POST request!";
 
         return (msg);
     }
 
     string processGET(string body) {
-        string msg = "Here is your response to GET request:\nDATAAAAA";
+        string msg = "HTTP/1.1 200 OK\nContent-Type: text/plain\nContent-Length: 12\n\nRespoooooaaaaonse to GET request!";
 
         return (msg);
     }
 
     string processDELETE(string body) {
-        string msg = "Here is your response to DELETE request:\nDATAAAAA";
+        string msg = "HTTP/1.1 200 OK\nContent-Type: text/plain\nContent-Length: 12\n\nResponse to DELETE request!";
 
         return (msg);
     }

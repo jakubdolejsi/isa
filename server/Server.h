@@ -109,6 +109,7 @@ public:
 
             if (!fork()) {
                 data = this->processClientData(acceptSockfd);
+                cout << "data jsou zpracovany"  << endl;
                 this->Send(acceptSockfd, data);
                 close(sockfd);
                 exit(0);
@@ -117,13 +118,11 @@ public:
         }
     }
     string processClientData(int clientSock) {
-        char data[BUFF_SIZE];
         string response, recvData;
         // tady
-        recvData = this->Recv(clientSock, data, 0);
+        recvData = this->Recv(clientSock, 0);
 
-        cout << "Accepted request: " << recvData << endl;
-        RequestParser requestParser = RequestParser(data);
+        RequestParser requestParser = RequestParser(recvData);
         response = requestParser.process();
         return (response);
     }
@@ -131,8 +130,7 @@ public:
     void Send(int acceptSockfd, string data) {
         char newData[data.size() + 1];
         strcpy(newData, data.c_str());	// or pass &s[0]
-
-        if (send(acceptSockfd, newData, strlen(newData), 0) < 0) {
+        if (send(acceptSockfd, newData, strlen(newData), 0) < 0) { // data se do browseru neodislaji vsechna
             SOCKET_ERR("Send error: ", SEND_SOCK_ERR)
         }
     }
@@ -144,11 +142,18 @@ public:
         return cstr;
     }
 
-    char *Recv(int clientSock, char *data, int flag) {
+    string Recv(int clientSock, int flag) {
+        char data[BUFF_SIZE];
+        bzero(data, BUFF_SIZE);
+
         if(recv(clientSock, data, BUFF_SIZE, flag) < 0) {
             SOCKET_ERR("Recv", "Recv error occured ");
         }
-        return (data);
+        cout << "----------" << endl;
+        cout << data << endl;
+        cout << "----------" << endl;
+        string s(data);
+        return (s);
     }
 
 };

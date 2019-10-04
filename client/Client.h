@@ -83,7 +83,7 @@ public:
     }
 
     void connectToServer() {
-        char buf[BUF_SIZE];
+        string data;
         int sockfd = this->createSocket();
 
         struct sockaddr_in addr = this->fillStruct();
@@ -95,17 +95,35 @@ public:
 
         this->sendRequest(sockfd, cstr);
 
-        if (recv(sockfd, buf, BUF_SIZE, 0) < 0) {
-            SOCKET_ERR("Recieving socket error: ", RECV_SOCK_ERR);
-        }
-        cout << "Recieving data from server: "<< buf << endl;
-        memset(buf, 0, BUF_SIZE);
+        data = this->Recv(sockfd);
+        cout << data << endl;
+
         close(sockfd);
     }
 
 
 private:
 
+    string Recv(int sockfd) {
+        char buf[BUF_SIZE];
+        bzero(buf, BUF_SIZE);
+        string data;
+        int rc;
+        while((rc = recv(sockfd, buf, BUF_SIZE, 0)) > 0) {
+            if(rc < 0) {
+                SOCKET_ERR("Reciev err", "An error occured while recieving data")
+            }
+            data += buf;
+            memset(buf, 0, BUF_SIZE);
+
+            return (data);
+        }
+
+//        if (recv(sockfd, buf, BUF_SIZE, 0) < 0) {
+//            SOCKET_ERR("Recieving socket error: ", RECV_SOCK_ERR);
+//        }
+        return (buf);
+    }
     void sendRequest(int sockfd, char *body) {
         send(sockfd, body, strlen(body), 0);
     }
