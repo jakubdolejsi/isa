@@ -125,8 +125,8 @@ private:
     void processBoards(char **inCommand, int &i) {
         i++;
         if (inCommand[i] == nullptr) { // boards
-            this->request = "GET/boards ";
-//            cout << " send request "<< this->request << endl;
+            this->request = "GET /boards HTTP/1.1\n";
+            //            cout << " send request "<< this->request << endl;
         } else if (COMPARE(inCommand[i], "list")) { // boards list
             this->processBoardsList(inCommand, i);
         } else {
@@ -144,7 +144,7 @@ private:
         i++;
         nullCheck(inCommand[i]);
         char *name = inCommand[i];
-        this->request = string("GET/boards/").append(name);
+        this->request = string("GET /board/").append(name).append(" HTTP/1.1");
 
 //        cout << " -----------------------------------" << endl;
 //        cout << " sending request "<< this->request << endl;
@@ -195,8 +195,9 @@ private:
         i++;
         nullCheck(inCommand[i]);
         char *name = inCommand[i];
-        this->request = string("POST /boards/").append(name);
-//        cout << " ------------------------------------" << endl;
+        this->request = string("POST /boards/").append (name).append("HTTP/1.0\n"
+                        "Content-Type: text/plain\n");
+        //        cout << " ------------------------------------" << endl;
 //        cout << " sending request " << this->request << endl;
 //        cout << " <name> : " << name << endl;
 //        cout << " ------------------------------------" << endl;

@@ -15,6 +15,14 @@
 #define PUT_LEN 3
 #define DELETE_LEN 6
 #define START_POS 0
+#define GET "GET"
+#define POST "POST"
+#define PUT "PUT"
+#define DELETE "DELETE"
+
+#define COMPARE(X, Y)\
+            (strncmp(X, Y, strlen(X)) == 0) ? true : false\
+
 
 using namespace std;
 
@@ -35,18 +43,22 @@ public:
         strcpy(buf, this->request.c_str());
 
         method = strtok(buf, " ");
-        if (strcmp(method, "GET") == 0) {
+        cout << "------------------" << endl;
+        cout << method<< endl;
+        cout << "------------------" << endl;
+        if (COMPARE(method, GET)) {
             response = this->processGET(this->request.substr(GET_LEN + 1));
-        } else if (this->request.substr(START_POS, POST_LEN) == "POST") {
+        } else if (COMPARE(method, POST)) {
             response = this->processPOST(this->request.substr(POST_LEN + 1));
-        } else if (this->request.substr(START_POS, PUT_LEN) == "PUT") {
+        } else if (COMPARE(method, PUT)) {
             response = this->processPUT(this->request.substr(PUT_LEN + 1));
-        } else if (this->request.substr(START_POS, DELETE_LEN) == "DELETE") {
+        } else if (COMPARE(method, DELETE)) {
             response = this->processDELETE(this->request.substr(DELETE_LEN + 1));
         } else {
             response = "chyba kamo vole";
             // TODO ERROR!
         }
+
         return (response);
     }
 
@@ -54,26 +66,31 @@ private:
 
 
     string processPUT(string body) {
-        string msg = "HTTP/1.1 200 OK\nContent-Type: text/plain\nContent-Length: 12\n\nResponse to PUT request!";
-
+        string dataLen = "30";
+        string msg = string("HTTP/1.1 200 OK\nContent-Type: text/plain\nContent-Length: ").append(dataLen);
+        msg.append("\n\nZde budou data(odpoved na PUT)");
         return (msg);
     }
 
     string processPOST(string body) {
-        string msg = "HTTP/1.1 200 OK\nContent-Type: text/plain\nContent-Length: 12\n\nResponse to POST request!";
+        string dataLen = "30";
+        string msg = string("HTTP/1.1 201 OK\nContent-Type: text/plain\nContent-Length: ").append(dataLen);
+        msg.append("\n\nZde budou data(odpoved na POST)");
 
         return (msg);
     }
 
     string processGET(string body) {
-        string msg = "HTTP/1.1 200 OK\nContent-Type: text/plain\nContent-Length: 12\n\nRespoooooaaaaonse to GET request!";
-
+        string dataLen = "30";
+        string msg = string("HTTP/1.1 200 OK\nContent-Type: text/plain\nContent-Length: ").append(dataLen);
+        msg.append("\n\nZde budou data(odpoved na GET)");
         return (msg);
     }
 
     string processDELETE(string body) {
-        string msg = "HTTP/1.1 200 OK\nContent-Type: text/plain\nContent-Length: 12\n\nResponse to DELETE request!";
-
+        string dataLen = "30";
+        string msg = string("HTTP/1.1 200 OK\nContent-Type: text/plain\nContent-Length: ").append(dataLen);
+        msg.append("\n\nZde budou data(odpoved na DELETE)");
         return (msg);
     }
 

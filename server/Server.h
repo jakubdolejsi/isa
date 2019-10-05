@@ -109,7 +109,6 @@ public:
 
             if (!fork()) {
                 data = this->processClientData(acceptSockfd);
-                cout << "data jsou zpracovany"  << endl;
                 this->Send(acceptSockfd, data);
                 close(sockfd);
                 exit(0);
@@ -122,8 +121,10 @@ public:
         // tady
         recvData = this->Recv(clientSock, 0);
 
+        cout << "Recv data: " << recvData << endl;
         RequestParser requestParser = RequestParser(recvData);
         response = requestParser.process();
+        cout << "Server respone: " << response << endl;
         return (response);
     }
 
@@ -149,9 +150,6 @@ public:
         if(recv(clientSock, data, BUFF_SIZE, flag) < 0) {
             SOCKET_ERR("Recv", "Recv error occured ");
         }
-        cout << "----------" << endl;
-        cout << data << endl;
-        cout << "----------" << endl;
         string s(data);
         return (s);
     }
