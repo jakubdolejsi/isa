@@ -96,7 +96,7 @@ public:
         this->sendRequest(sockfd, cstr);
 
         data = this->Recv(sockfd);
-        cout << data << endl;
+//        cout << data << endl;
 
         close(sockfd);
     }
@@ -125,6 +125,9 @@ private:
         return (buf);
     }
     void sendRequest(int sockfd, char *body) {
+        cout << "----------------------" << endl;
+        cout << body << endl;
+        cout << "----------------------" << endl;
         send(sockfd, body, strlen(body), 0);
     }
 
@@ -141,7 +144,6 @@ private:
 
     int createSocket() {
         int sockfd;
-        int option = 1;
         if ((sockfd = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
             SOCKET_ERR("Creating socket error", CREATE_SOCK_ERR)
         }

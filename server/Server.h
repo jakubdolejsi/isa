@@ -11,12 +11,13 @@
 #include <arpa/inet.h>
 #include <unistd.h>
 #include "RequestParser.h"
+#include "Datas.h"
 
 
 #ifndef ISA_SERVER_H
 #define ISA_SERVER_H
 
-#endif //ISA_SERVER_H
+
 #define SA struct sockaddr
 #define BACKLOG 10 // pocet spojeni
 #define BUFF_SIZE 1024
@@ -34,10 +35,12 @@ class Server {
 
 private:
     int port;
+    Datas data;
 
 public:
     Server(int port) {
         this->port = port;
+        this->data = Datas();
     }
 
 private:
@@ -108,7 +111,8 @@ public:
 //            printf("server: got connection from %s to port %hu\n", inet_ntoa(clientAddr.sin_addr), clientAddr.sin_port);
 
             if (!fork()) {
-                data = this->processClientData(acceptSockfd);
+                data = (this->parseClientData(acceptSockfd)); //this->processCLientData(this->parseClientData(acceptSockfd))
+                cout << "DATA FRO USER: "<< data << endl;
                 this->Send(acceptSockfd, data);
                 close(sockfd);
                 exit(0);
@@ -116,15 +120,17 @@ public:
             close(acceptSockfd);
         }
     }
-    string processClientData(int clientSock) {
+
+
+
+    string parseClientData(int clientSock) {
         string response, recvData;
         // tady
         recvData = this->Recv(clientSock, 0);
 
-        cout << "Recv data: " << recvData << endl;
         RequestParser requestParser = RequestParser(recvData);
         response = requestParser.process();
-        cout << "Server respone: " << response << endl;
+
         return (response);
     }
 
@@ -154,4 +160,9 @@ public:
         return (s);
     }
 
+    string processClientData(string data) {
+        return (this->data.process(data));
+    }
+
 };
+#endif //ISA_SERVER_H

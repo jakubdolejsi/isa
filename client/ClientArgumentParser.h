@@ -31,7 +31,7 @@ private:
     string request{};
     int argc;
     char **argv;
-    string content;
+    const char *content;
 
 
 public:
@@ -125,7 +125,7 @@ private:
     void processBoards(char **inCommand, int &i) {
         i++;
         if (inCommand[i] == nullptr) { // boards
-            this->request = "GET /boards HTTP/1.1\n";
+            this->request = string("GET /boards HTTP/1.1\r\nHost: ").append(this->host).append("\r\n\r\n");
             //            cout << " send request "<< this->request << endl;
         } else if (COMPARE(inCommand[i], "list")) { // boards list
             this->processBoardsList(inCommand, i);
@@ -144,7 +144,7 @@ private:
         i++;
         nullCheck(inCommand[i]);
         char *name = inCommand[i];
-        this->request = string("GET /board/").append(name).append(" HTTP/1.1");
+        this->request = string("GET /board/").append(name).append(" HTTP/1.1\r\nHost: ").append(this->host).append("\r\n\r\n");
 
 //        cout << " -----------------------------------" << endl;
 //        cout << " sending request "<< this->request << endl;
@@ -179,7 +179,7 @@ private:
         i++;
         nullCheck(inCommand[i]);
         char *name = inCommand[i];
-        this->request = string("DELETE /boards/").append(name);
+        this->request = string("DELETE /boards/").append(name).append(" HTTP/1.1\r\nHost: ").append(this->host).append("\r\n\r\n");
 //        cout << " ------------------------------------" << endl;
 //        cout << "sending request " << this->request << endl;
 //        cout << " <name> : " << name << endl;
@@ -195,8 +195,7 @@ private:
         i++;
         nullCheck(inCommand[i]);
         char *name = inCommand[i];
-        this->request = string("POST /boards/").append (name).append("HTTP/1.0\n"
-                        "Content-Type: text/plain\n");
+        this->request = string("POST /boards/").append (name).append(" HTTP/1.1\r\nHost: ").append(this->host).append("\r\n\r\n");
         //        cout << " ------------------------------------" << endl;
 //        cout << " sending request " << this->request << endl;
 //        cout << " <name> : " << name << endl;
@@ -235,7 +234,7 @@ private:
     }
 
     /**
-     * @brief POST /board/<name>
+     * @brief POST /board/<name> [content]
      * @param inCommand
      * @param i
      * @param name
@@ -244,7 +243,9 @@ private:
         i++;
         this->nullCheck(inCommand[i]);
         this->content = inCommand[i];
-        this->request = string("POST /board/").append(name);
+
+        string cont = string("Content-Type: text/plain\r\nContent-Length: ").append(to_string(strlen(this->content))).append("\r\n\r\n").append(this->content);
+        this->request = string("POST /board/").append(name).append(" HTTP/1.1\r\nHost: ").append(this->host).append("\r\n").append(cont);
 //        cout << " ------------------------------------" << endl;
 //        cout << " sending request " << this->request << endl;
 //        cout << " <name> : " << name << endl;
@@ -275,7 +276,7 @@ private:
         i++;
         this->nullCheck(inCommand[i]);
         char *id = inCommand[i];
-        this->request = string("DELETE /board/").append(name).append("/").append(id); // snad povali
+        this->request = string("DELETE /board/").append(name).append("/").append(id).append(" HTTP/1.1\r\nHost: ").append(this->host).append("\r\n\r\n");
         //TODO check na int ID
 //        cout << " ------------------------------------" << endl;
 //        cout << " sending request " << this->request << endl;
@@ -311,7 +312,7 @@ private:
 
 
     /**
-     * @brief  PUT /board/<name>/<id>
+     * @brief  PUT /board/<name>/<id> [content]
      * @param inCommand
      * @param i
      * @param name
@@ -320,8 +321,9 @@ private:
     void processItemUpdateName(char **inCommand, int &i, char *name, char *id) {
         i++;
         this->nullCheck(inCommand[i]);
-        char *content = inCommand[i];
-        this->request = string("PUT /board/").append(name).append("/").append(id).append("/").append(content);
+        this->content = inCommand[i];
+        string cont = string("Content-Type: text/plain\r\nContent-Length: ").append(to_string(strlen(this->content))).append("\r\n\r\n").append(this->content);
+        this->request = string("PUT /board/").append(name).append("/").append(id).append("/ HTTP/1.1\r\nHost: ").append(this->host).append("\r\n").append(cont);
 //        cout << " ------------------------------------" << endl;
 //        cout << " sending request " << this->request << endl;
 //        cout << " <name> : " << name << endl;
