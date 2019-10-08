@@ -1,7 +1,6 @@
 //
 // Created by jakub on 02.10.19.
 //
-#include <cstdio>
 #include <cstdlib>
 #include <cerrno>
 #include <sys/types.h>
@@ -11,7 +10,15 @@
 #include <arpa/inet.h>
 #include <unistd.h>
 #include "RequestParser.h"
-#include "Datas.h"
+#include "Data.h"
+#include <sys/ipc.h>
+#include <sys/shm.h>
+#include <cstdio>
+#include <iostream>
+#include <sys/ipc.h>
+#include <sys/shm.h>
+#include <sys/stat.h>
+#include <sys/mman.h>
 
 
 #ifndef ISA_SERVER_H
@@ -35,12 +42,12 @@ class Server {
 
 private:
     int port;
-    Datas data;
+    Data data;
 
 public:
     Server(int port) {
         this->port = port;
-        this->data = Datas();
+        this->data = Data();
     }
 
 private:
@@ -99,32 +106,66 @@ public:
         sockaddr_in serverAddr, clientAddr;
         int sockfd, acceptSockfd;
         pid_t childpid;
-        string data;
+
 
         sockfd = this->createSocket();
         serverAddr = this->fillStructure();
         this->bindSocket(sockfd, serverAddr);
         this->Listen(sockfd);
 
+        void* shmem = this->create_shared_memory(128);
+
+
         while (true) {
             acceptSockfd = this->Accept(sockfd, clientAddr);
-//            printf("server: got connection from %s to port %hu\n", inet_ntoa(clientAddr.sin_addr), clientAddr.sin_port);
 
             if (!fork()) {
-                data = (this->parseClientData(acceptSockfd)); //this->processCLientData(this->parseClientData(acceptSockfd))
-                cout << "DATA FRO USER: "<< data << endl;
-                this->Send(acceptSockfd, data);
+                string dataToSharedMemory;
+                string dataToSend;
+
+                //TODO NEJAK SE TO DIVNE PREPISUJE
+                this->data.deserialize(shmem);
+
+                dataToSend = this->processClientData(this->parseClientData(acceptSockfd));
+
+                dataToSharedMemory =this->data.serialize(this->data.getBoards());
+
+                cout << "-------------------" << endl;
+                int n = dataToSharedMemory.length();
+                char char_array[n + 1];
+                strcpy(char_array, dataToSharedMemory.c_str());
+
+                printf("Before insert : %s\n", shmem);
+                memcpy(shmem, char_array, sizeof(char_array));
+                printf("After Insert: : %s\n", shmem);
+
+                this->Send(acceptSockfd, dataToSend);
+
                 close(sockfd);
                 exit(0);
             }
             close(acceptSockfd);
         }
+
     }
 
 
+    void* create_shared_memory(size_t size) {
+        // Our memory buffer will be readable and writable:
+        int protection = PROT_READ | PROT_WRITE;
 
-    string parseClientData(int clientSock) {
-        string response, recvData;
+        // The buffer will be shared (meaning other processes can access it), but
+        // anonymous (meaning third-party processes cannot obtain an address for it),
+        // so only this process and its children will be able to use it:
+        int visibility = MAP_SHARED | MAP_ANONYMOUS;
+
+        // The remaining parameters to `mmap()` are not important for this use case,
+        // but the manpage for `mmap` explains their purpose.
+        return mmap(NULL, size, protection, visibility, -1, 0);
+    }
+    vector<string> parseClientData(int clientSock) {
+        string recvData;
+        vector<string> response;
         // tady
         recvData = this->Recv(clientSock, 0);
 
@@ -136,7 +177,7 @@ public:
 
     void Send(int acceptSockfd, string data) {
         char newData[data.size() + 1];
-        strcpy(newData, data.c_str());	// or pass &s[0]
+        strcpy(newData, data.c_str());    // or pass &s[0]
         if (send(acceptSockfd, newData, strlen(newData), 0) < 0) { // data se do browseru neodislaji vsechna
             SOCKET_ERR("Send error: ", SEND_SOCK_ERR)
         }
@@ -153,16 +194,18 @@ public:
         char data[BUFF_SIZE];
         bzero(data, BUFF_SIZE);
 
-        if(recv(clientSock, data, BUFF_SIZE, flag) < 0) {
+        if (recv(clientSock, data, BUFF_SIZE, flag) < 0) {
             SOCKET_ERR("Recv", "Recv error occured ");
         }
         string s(data);
         return (s);
     }
 
-    string processClientData(string data) {
+    string processClientData(vector<string> data) {
         return (this->data.process(data));
     }
 
+
 };
+
 #endif //ISA_SERVER_H
