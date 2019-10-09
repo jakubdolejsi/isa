@@ -168,7 +168,7 @@ string updateTopicById(vector<vector<string>> &boards, string boardName, string 
     return "";
 }
 
-string ser(vector<vector<string>> boards) {
+string serialize(vector<vector<string>> boards) {
     string out;
     for (vector<int>::size_type i = 0; i != boards.size(); i++) {
         for (vector<int>::size_type j = 0; j != boards[i].size(); j++) {
@@ -180,8 +180,10 @@ string ser(vector<vector<string>> boards) {
     return out;
 }
 
-vector<vector<string>>  deser(string in) {
-    istringstream iss(in);
+vector<vector<string>>  deserialize(void *in) {
+    char *charIn = (char *)in;
+
+    istringstream iss(charIn);
     vector<vector<string>> boards;
     vector<string> topic;
     string line;
@@ -204,34 +206,56 @@ void print(vector<vector<string>> boards) {
         }
     }
 }
+
+
+void* create_shared_memory(size_t size) {
+    // Our memory buffer will be readable and writable:
+    int protection = PROT_READ | PROT_WRITE;
+
+    // The buffer will be shared (meaning other processes can access it), but
+    // anonymous (meaning third-party processes cannot obtain an address for it),
+    // so only this process and its children will be able to use it:
+    int visibility = MAP_SHARED | MAP_ANONYMOUS;
+
+    // The remaining parameters to `mmap()` are not important for this use case,
+    // but the manpage for `mmap` explains their purpose.
+    return mmap(NULL, size, protection, visibility, -1, 0);
+}
+
+
+
 int main(int argc, char **argv) {
 
-
-//    vector<vector<string>> boards;
-//    createNewBoard(boards, "[nastenka1]");
-//    createNewBoard(boards, "[nastenka2]");
 //
-//    insertNewTopic(boards, "[nastenka2]", "prvni clanek");
-//    insertNewTopic(boards, "[nastenka2]", "druhy clanek");
-//    createNewBoard(boards, "[nastenka3]");
-//    insertNewTopic(boards, "[nastenka2]", "treti clanek");
+//    char* parent_message = "hello";  // parent process will write this message
+//    char* child_message = "goodbye"; // child process will then write this one
 //
-//    updateTopicById(boards, "[nastenka2]", "2", "to je to kurva druhy clanek!!");
-//    cout << "-------------------SER---------------" << endl;
-//    string out = ser(boards);
-//    cout << out << endl;
-//    cout << "--------------------DESER--------------" << endl;
-//    vector<vector<string>> newBoards;
-//    newBoards = deser(out);
-//    print(newBoards);
+//    void* shmem = create_shared_memory(128);
 //
+//    char *x ="";
+//    memcpy(shmem, x, sizeof(x));
 //
+//    int pid = fork();
 //
+//    while(true) {
+//        if (pid == 0) {
+//            printf("This should by empty: %s\n", shmem);
+//            memcpy(shmem, child_message, sizeof(child_message));
+//            printf("Child wrote: %s\n", shmem);
+//
+//        }
+//        waitpid(pid, NULL, 0);
+//        printf("Parent read: %s\n", shmem);
+//        printf("After 1s, parent read: %s\n", shmem);
+//        memcpy(shmem, parent_message, sizeof(parent_message));
+//        printf("Parent write: %s\n", shmem);
+//
+//    }
 //
 //    exit(0);
 
-    ServerArgumentParser serverArgumentParser =  ServerArgumentParser(argc, argv);
-    serverArgumentParser.parse();
+    ServerArgumentParser serverArgumentParser =  ServerArgumentParser();
+//    serverArgumentParser.parse();
 
 
     Server server = serverArgumentParser.createServer();

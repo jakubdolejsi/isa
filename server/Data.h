@@ -46,12 +46,12 @@ public:
         return (result);
     }
 
-    string serialize(vector<vector<string>> boards) {
+    string serialize() {
         string out;
-        for (vector<int>::size_type i = 0; i != boards.size(); i++) {
-            for (vector<int>::size_type j = 0; j != boards[i].size(); j++) {
+        for (vector<int>::size_type i = 0; i != this->boards.size(); i++) {
+            for (vector<int>::size_type j = 0; j != this->boards[i].size(); j++) {
 //            cout << boards[i][j] << endl;
-                out.append(boards[i][j]).append("\n");
+                out.append(this->boards[i][j]).append("\n");
             }
             out.append(":\n");
         }
@@ -59,14 +59,18 @@ public:
         return out;
     }
 
-    void deserialize(void *in) {
-        stringstream strm;
-        strm << in;
-
-        istringstream iss(strm.str());
+    vector<vector<string>> deserialize(void *in, bool &first) {
         vector<vector<string>> boards;
         vector<string> topic;
+        char *test = static_cast<char*>(in);
+        istringstream iss(test);
         string line;
+
+        if(first) {
+            this->boards = boards;
+            first = false;
+            return boards;
+        }
 
         while (std::getline(iss, line)) {
             if (line == ":") {
@@ -77,6 +81,7 @@ public:
             }
         }
         this->boards = boards;
+        return boards;
     }
 
     vector<vector<string>> getBoards() {
@@ -92,16 +97,16 @@ private:
         if (params[1] == "boards") {
             res = this->getAllBoards();
             if (res.empty()) {
-                return this->GETFailed(NO_DATA);
+                return this->queryFailed(NO_DATA);
             }
         } else {
-            res = this->getBoardByName(params[2]);
+            res = this->getBoardByName(this->convertName(params[2]));
             if (res.empty()) {
-                return this->GETFailed(NO_DATA);
+                return this->queryFailed(NO_DATA);
             }
         }
-        this->print(this->boards);
-        return GETSuccess(G_P_D_OK, res);
+//        this->print(this->boards);
+        return querySucess(G_P_D_OK, res);
     }
 
     string processPOST(vector<string> params) {
@@ -112,77 +117,44 @@ private:
         if (firstParam == "boards") { // vtvori novou prazdnou nastenku s nazvem <name>
             res = this->createNewBoard(this->convertName(name));
             if (res.empty()) {
-                return POSTFailed(DUPLICATE);
+                return this->queryFailed(DUPLICATE);
             }
         } else {
             res = this->insertNewTopic(this->convertName(name), params[3]);
             if(res.empty()) {
-                return POSTSuccess(NO_DATA);
+                return this->querySucess(NO_DATA);
             }
             // nevim kde by se mohla stat chyba pri vkladani
         }
-        this->print(this->boards);
-        return this->POSTSuccess(POST_OK);
+//        this->print(this->boards);
+        return this->querySucess(POST_OK);
     }
 
 
     string processPUT(vector<string> params) {
-//        cout << params << endl;
-//        exit(0);
+        bool res;
+        res = this->updateTopicById(this->convertName(params[2]), params[3], params[4]);
 
+        return (res ? this->querySucess(G_P_D_OK) : this->queryFailed(NO_DATA));
     }
 
-    string processDELETE(vector<string>) {
-    }
-
-
-    size_t findContentStart(string inString, string find) {
-        string x = inString;
-        int found = x.find(find);
-        if (found != string::npos) {
-            return found;
+    string processDELETE(vector<string> params) {
+        bool res;
+        string boardName = params[2];
+        if(params[1] == "board") {
+            string id = params[3];
+            res = this->deleteTopicByID(boardName, id);
+        } else {
+            res = this->deleteBoardByName(boardName);
         }
+        return (res ? this->querySucess(G_P_D_OK) : this->queryFailed(NO_DATA));
     }
 
-    string processPOSTBoards(string name) {
-        vector<string> cont;
-        bool duplicate;
-        cont.push_back(name);
-        duplicate = this->findDuplicate(this->boards, cont);
-        if (duplicate) {
-            return (this->POSTFailed(DUPLICATE));
-        }
-        this->boards.push_back(cont);
-        return (this->POSTSuccess(POST_OK));
-    }
-
-    string processPOSTBoard(vector<string> params) {
-        string board = params[2];
-        string content = params[3];
-        return "";
-    }
-
-    bool findDuplicate(vector<vector<string>> vec, vector<string> item) {
-        return (std::find(vec.begin(), vec.end(), item) != vec.end());
-    }
-
-
-    string GETFailed(string code) {
-        string header = string("HTTP/1.1 ").append(code).append(" NOK\r\n\r\n");
-        return header;
-    }
-
-    string GETSuccess(string code, string data) {
+    string querySucess(const string &code, string data = "") {
         string header = string("HTTP/1.1 ").append(code).append(" OK\r\n\r\n").append(data);
         return header;
     }
-
-    string POSTSuccess(string code) {
-        string header = string("HTTP/1.1 ").append(code).append(" OK\r\n\r\n");
-        return header;
-    }
-
-    string POSTFailed(const string &code) {
+    string queryFailed(const string &code) {
         string header = string("HTTP/1.1 ").append(code).append(" NOK\r\n\r\n");
         return header;
     }
@@ -202,10 +174,10 @@ private:
  * @param name
  * @return
  */
-    string createNewBoard(string name) {
+    string createNewBoard(string boardName) {
 
         vector<string> cont;
-        cont.push_back(name);
+        cont.push_back(boardName);
         bool ok = checkDuplicity(cont);
         if (!ok) {
             return "";
@@ -246,13 +218,15 @@ private:
  * @param boards
  * @param boardName
  */
-    void deleteBoardByName(vector<vector<string>> &boards, string boardName) {
-
-        for (vector<int>::size_type i = 0; i != boards.size(); i++) {
-            if (boards[i][0] == boardName) {
-                boards.erase(boards.begin() + i);
+    bool deleteBoardByName(const string &boardName) {
+        bool found = false;
+        for (vector<int>::size_type i = 0; i != this->boards.size(); i++) {
+            if (this->boards[i][0] == boardName) {
+                found = true;
+                this->boards.erase(this->boards.begin() + i);
             }
         }
+        return found;
     }
 
 /**
@@ -275,14 +249,17 @@ private:
  * @param boardName
  * @param id
  */
-    void deleteTopicByID(vector<vector<string>> &boards, string boardName, string id) {
+    bool deleteTopicByID(const string &boardName, const string &id) {
         int index = atoi(id.c_str());
-        for (vector<int>::size_type i = 0; i != boards.size(); i++) {
-            if (boards[i][0] == boardName) {
-                boards[i].erase(boards[i].begin() + index);
-                reformateTopics(boards[i], index);
+        bool found = false;
+        for (vector<int>::size_type i = 0; i != this->boards.size(); i++) {
+            if (this->boards[i][0] == boardName) {
+                found = true;
+                this->boards[i].erase(this->boards[i].begin() + index);
+                reformateTopics(this->boards[i], index);
             }
         }
+        return found;
     }
 
 /**
@@ -310,8 +287,7 @@ private:
 //            return boards[i][0];
             }
         }
-        cout << "Nastenka " << boardName << " nebyla nalezena" << endl;
-        return "Nenaslo se";
+        return "";
     }
 
 /**
@@ -357,13 +333,15 @@ private:
  * @param content
  * @return
  */
-    string updateTopicById(vector<vector<string>> &boards, string boardName, string id, string content) {
-        for (vector<int>::size_type i = 0; i != boards.size(); i++) {
-            if (boards[i][0] == boardName) {
-                update(boards[i], id, content);
+    bool updateTopicById(string boardName, string id, string content) {
+        bool found = false;
+        for (vector<int>::size_type i = 0; i != this->boards.size(); i++) {
+            if (this->boards[i][0] == boardName) {
+                found = true;
+                update(this->boards[i], id, content);
             }
         }
-        return "";
+        return found;
     }
 
     string convertName(string name) {
@@ -378,7 +356,6 @@ private:
 //            std::cout << input.at(i) << ' ';
         }
     }
-
 
 };
 

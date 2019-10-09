@@ -124,15 +124,7 @@ private:
      */
     void processBoards(char **inCommand, int &i) {
         i++;
-        if (inCommand[i] == nullptr) { // boards
-            this->request = string("GET /boards HTTP/1.1\r\nHost: ").append(this->host).append("\r\n\r\n");
-            //            cout << " send request "<< this->request << endl;
-        } else if (COMPARE(inCommand[i], "list")) { // boards list
-            this->processBoardsList(inCommand, i);
-        } else {
-            cout << "neznamy prikaz na request" << endl;
-            exit(420);
-        }
+        this->request = string("GET /boards HTTP/1.1\r\nHost: ").append(this->host).append("\r\n\r\n");
     }
 
     /**
@@ -146,10 +138,6 @@ private:
         char *name = inCommand[i];
         this->request = string("GET /board/").append(name).append(" HTTP/1.1\r\nHost: ").append(this->host).append("\r\n\r\n");
 
-//        cout << " -----------------------------------" << endl;
-//        cout << " sending request "<< this->request << endl;
-//        cout << " <name> : " << name << endl;
-//        cout << " ------------------------------------" << endl;
     }
 
     /**
@@ -163,7 +151,9 @@ private:
         if (COMPARE(inCommand[i], "add")) { // board/add
             this->processBoardAdd(inCommand, i);
         } else if (COMPARE(inCommand[i], "delete")) { //  board/delete
-            processBoardDelete(inCommand, i);
+            this->processBoardDelete(inCommand, i);
+        } else if(COMPARE(inCommand[i], "list")) {
+            this->processBoardsList(inCommand, i);
         } else {
             cout << "neznamy prikaz na request" << endl;
             exit(420);
@@ -180,10 +170,7 @@ private:
         nullCheck(inCommand[i]);
         char *name = inCommand[i];
         this->request = string("DELETE /boards/").append(name).append(" HTTP/1.1\r\nHost: ").append(this->host).append("\r\n\r\n");
-//        cout << " ------------------------------------" << endl;
-//        cout << "sending request " << this->request << endl;
-//        cout << " <name> : " << name << endl;
-//        cout << " ------------------------------------" << endl;
+
     }
 
     /**
@@ -196,10 +183,7 @@ private:
         nullCheck(inCommand[i]);
         char *name = inCommand[i];
         this->request = string("POST /boards/").append (name).append(" HTTP/1.1\r\nHost: ").append(this->host).append("\r\n\r\n");
-        //        cout << " ------------------------------------" << endl;
-//        cout << " sending request " << this->request << endl;
-//        cout << " <name> : " << name << endl;
-//        cout << " ------------------------------------" << endl;
+
     }
 
     /**
@@ -246,11 +230,7 @@ private:
 
         string cont = string("Content-Type: text/plain\r\nContent-Length: ").append(to_string(strlen(this->content))).append("\r\n\r\n").append(this->content);
         this->request = string("POST /board/").append(name).append(" HTTP/1.1\r\nHost: ").append(this->host).append("\r\n").append(cont);
-//        cout << " ------------------------------------" << endl;
-//        cout << " sending request " << this->request << endl;
-//        cout << " <name> : " << name << endl;
-//        cout << " <content> : " << content << endl;
-//        cout << " ------------------------------------" << endl;
+
 
     }
 
@@ -278,11 +258,7 @@ private:
         char *id = inCommand[i];
         this->request = string("DELETE /board/").append(name).append("/").append(id).append(" HTTP/1.1\r\nHost: ").append(this->host).append("\r\n\r\n");
         //TODO check na int ID
-//        cout << " ------------------------------------" << endl;
-//        cout << " sending request " << this->request << endl;
-//        cout << " <name> : " << name << endl;
-//        cout << " <id> : " << id << endl;
-//        cout << " ------------------------------------" << endl;
+
     }
 
     /**
@@ -324,12 +300,7 @@ private:
         this->content = inCommand[i];
         string cont = string("Content-Type: text/plain\r\nContent-Length: ").append(to_string(strlen(this->content))).append("\r\n\r\n").append(this->content);
         this->request = string("PUT /board/").append(name).append("/").append(id).append("/ HTTP/1.1\r\nHost: ").append(this->host).append("\r\n").append(cont);
-//        cout << " ------------------------------------" << endl;
-//        cout << " sending request " << this->request << endl;
-//        cout << " <name> : " << name << endl;
-//        cout << " <id> : " << id << endl;
-//        cout << " <content> : " << content << endl;
-//        cout << " ------------------------------------" << endl;
+
 
     }
 
