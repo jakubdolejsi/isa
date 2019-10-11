@@ -15,11 +15,11 @@
 #include <sys/shm.h>
 #include <cstdio>
 #include <iostream>
-#include <sys/ipc.h>
 #include <sys/shm.h>
 #include <sys/stat.h>
 #include <sys/mman.h>
-
+#include<sys/ipc.h>
+#include<sys/shm.h>
 
 #ifndef ISA_SERVER_H
 #define ISA_SERVER_H
@@ -29,6 +29,7 @@
 #define BACKLOG 10 // pocet spojeni
 #define BUFF_SIZE 1024
 #define SEND_SOCK_ERR "An error occured while sending data\n"
+#define TEST_DATA "[Test]\n1. kontent\n2. picaSrac\n:\n[DruhyTest]\n1. pica\n2. picaDve:"
 
 
 #define SOCKET_ERR(P_TEXT, M_TEXT)\
@@ -38,11 +39,13 @@
 
 using namespace std;
 
+
 class Server {
 
 private:
     int port;
     Data data;
+
 
 public:
     Server(int port) {
@@ -69,7 +72,6 @@ private:
             perror("socketError:");
             exit(10);
         }
-//        setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &option, sizeof(option));
         return sockfd;
     }
 
@@ -101,72 +103,70 @@ private:
         return (acceptedSock);
     }
 
+
 public:
     void mainLoop() {
         sockaddr_in serverAddr, clientAddr;
         int sockfd, acceptSockfd;
-        pid_t childpid;
+        string dataToSend;
+        string dataToSharedMemory;
+        int segment_id;
+        char *shared_memory;
+        struct shmid_ds shmbuffer;
+        int segment_size;
+        bool first = true;
 
+
+        shmctl (segment_id, IPC_RMID, 0);
+        segment_id = shmget (IPC_PRIVATE, 0x6400,
+                             IPC_CREAT | IPC_EXCL | S_IRUSR | S_IWUSR);
+
+        shared_memory = (char*) shmat (segment_id, nullptr, 0);
+
+        shmctl (segment_id, IPC_STAT, &shmbuffer);
+        char *x = TEST_DATA; // nejaka vstupni data..
+        sprintf(shared_memory, x, sizeof(x));
 
         sockfd = this->createSocket();
         serverAddr = this->fillStructure();
         this->bindSocket(sockfd, serverAddr);
         this->Listen(sockfd);
 
-        void* shmem = this->create_shared_memory(128);
-
-
         while (true) {
+
             acceptSockfd = this->Accept(sockfd, clientAddr);
 
-            if (!fork()) {
-                string dataToSharedMemory;
-                string dataToSend;
+            int pid = fork();
+            if (pid == 0) {
+                segment_size  = shmbuffer.shm_segsz;
 
-                //TODO NEJAK SE TO DIVNE PREPISUJE
-                this->data.deserialize(shmem);
-
+                this->data.deserialize(shared_memory, first);
                 dataToSend = this->processClientData(this->parseClientData(acceptSockfd));
+                dataToSharedMemory =this->data.serialize();
 
-                dataToSharedMemory =this->data.serialize(this->data.getBoards());
-
-                cout << "-------------------" << endl;
                 int n = dataToSharedMemory.length();
                 char char_array[n + 1];
                 strcpy(char_array, dataToSharedMemory.c_str());
 
-                printf("Before insert : %s\n", shmem);
-                memcpy(shmem, char_array, sizeof(char_array));
-                printf("After Insert: : %s\n", shmem);
+                sprintf(shared_memory, char_array, sizeof(char_array));
+                printf("Stav boardu: %s\n", shared_memory);
+
+                shmdt (shared_memory);
 
                 this->Send(acceptSockfd, dataToSend);
-
                 close(sockfd);
-                exit(0);
+                exit(EXIT_SUCCESS);
             }
+            wait(NULL);
             close(acceptSockfd);
         }
 
     }
 
 
-    void* create_shared_memory(size_t size) {
-        // Our memory buffer will be readable and writable:
-        int protection = PROT_READ | PROT_WRITE;
-
-        // The buffer will be shared (meaning other processes can access it), but
-        // anonymous (meaning third-party processes cannot obtain an address for it),
-        // so only this process and its children will be able to use it:
-        int visibility = MAP_SHARED | MAP_ANONYMOUS;
-
-        // The remaining parameters to `mmap()` are not important for this use case,
-        // but the manpage for `mmap` explains their purpose.
-        return mmap(NULL, size, protection, visibility, -1, 0);
-    }
     vector<string> parseClientData(int clientSock) {
         string recvData;
         vector<string> response;
-        // tady
         recvData = this->Recv(clientSock, 0);
 
         RequestParser requestParser = RequestParser(recvData);
@@ -177,18 +177,12 @@ public:
 
     void Send(int acceptSockfd, string data) {
         char newData[data.size() + 1];
-        strcpy(newData, data.c_str());    // or pass &s[0]
-        if (send(acceptSockfd, newData, strlen(newData), 0) < 0) { // data se do browseru neodislaji vsechna
+        strcpy(newData, data.c_str());
+        if (send(acceptSockfd, newData, strlen(newData), 0) < 0) {
             SOCKET_ERR("Send error: ", SEND_SOCK_ERR)
         }
     }
 
-
-    char *stringToChar(string s) {
-        char cstr[s.size() + 1];
-        strcpy(cstr, s.c_str());
-        return cstr;
-    }
 
     string Recv(int clientSock, int flag) {
         char data[BUFF_SIZE];
@@ -205,7 +199,14 @@ public:
         return (this->data.process(data));
     }
 
-
+    void print(vector<vector<string>> const &input) {
+        for (int i = 0; i < input.size(); i++) {
+            for (int j = 0; j < input.size(); j++) {
+                cout << input[i][j] << endl;
+            }
+//            std::cout << input.at(i) << ' ';
+        }
+    }
 };
 
 #endif //ISA_SERVER_H

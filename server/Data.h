@@ -28,7 +28,6 @@ class Data {
 private:
     vector<vector<string>> boards;
     VectorMapper vectorMapper;
-    string serData;
 
 public:
     string process(vector<string> data) {
@@ -50,26 +49,23 @@ public:
         string out;
         for (vector<int>::size_type i = 0; i != this->boards.size(); i++) {
             for (vector<int>::size_type j = 0; j != this->boards[i].size(); j++) {
-//            cout << boards[i][j] << endl;
                 out.append(this->boards[i][j]).append("\n");
             }
             out.append(":\n");
         }
-        this->serData = out;
         return out;
     }
 
-    vector<vector<string>> deserialize(void *in, bool &first) {
+    void deserialize(char *in, bool &first) {
+        first = false;
         vector<vector<string>> boards;
         vector<string> topic;
-        char *test = static_cast<char*>(in);
-        istringstream iss(test);
+        istringstream iss(in);
         string line;
 
         if(first) {
             this->boards = boards;
             first = false;
-            return boards;
         }
 
         while (std::getline(iss, line)) {
@@ -80,8 +76,11 @@ public:
                 topic.push_back(line);
             }
         }
+        if(!topic.empty()) {
+            boards.push_back(topic);
+            topic.clear();
+        }
         this->boards = boards;
-        return boards;
     }
 
     vector<vector<string>> getBoards() {
@@ -89,6 +88,18 @@ public:
     }
 
 private:
+
+    string toString(char **in) {
+        string bar;
+        for(int i =0 ; i< strlen(*in);i++)
+        {
+            for(int j =0 ;j<3;j++)
+            {
+                bar += in[i][j];
+            }
+        }
+        return bar;
+    }
 
 
     string processGET(vector<string> params) {
@@ -105,7 +116,6 @@ private:
                 return this->queryFailed(NO_DATA);
             }
         }
-//        this->print(this->boards);
         return querySucess(G_P_D_OK, res);
     }
 
@@ -122,11 +132,9 @@ private:
         } else {
             res = this->insertNewTopic(this->convertName(name), params[3]);
             if(res.empty()) {
-                return this->querySucess(NO_DATA);
+                return this->queryFailed(NO_DATA);
             }
-            // nevim kde by se mohla stat chyba pri vkladani
         }
-//        this->print(this->boards);
         return this->querySucess(POST_OK);
     }
 
@@ -143,9 +151,9 @@ private:
         string boardName = params[2];
         if(params[1] == "board") {
             string id = params[3];
-            res = this->deleteTopicByID(boardName, id);
+            res = this->deleteTopicByID(this->convertName(boardName), id);
         } else {
-            res = this->deleteBoardByName(boardName);
+            res = this->deleteBoardByName(this->convertName(boardName));
         }
         return (res ? this->querySucess(G_P_D_OK) : this->queryFailed(NO_DATA));
     }
@@ -194,18 +202,19 @@ private:
  * @param content
  * @return
  */
-    string insertNewTopic(const string &boardName, const string &content) {
+    string insertNewTopic(const string &boardName, string &content) {
 
+        content.erase(std::remove(content.begin(), content.end(), '\n'), content.end());
         vector<string> cont;
         cont.push_back(boardName);
-        bool dupl = checkDuplicity(cont);
-        if(dupl) {
+        if(this->checkDuplicity(cont)) {
             return "";
         }
-        static int counter = 1;
+        static int counter;
         string x;
         for (vector<int>::size_type i = 0; i != this->boards.size(); i++) {
             if (this->boards[i][0] == boardName) {
+                counter = boards[i].size();
                 this->boards[i].push_back((to_string(counter)).append(". ").append(content)); // vlozi prispevek
                 counter++;
             }
@@ -224,9 +233,17 @@ private:
             if (this->boards[i][0] == boardName) {
                 found = true;
                 this->boards.erase(this->boards.begin() + i);
+//                this->boards[i].clear();
+//                this->boards[i].erase(this->boards[i].begin(), this->boards[i].end());
             }
         }
         return found;
+    }
+
+    void deleteTopics(vector<string> &board) {
+        for (vector<int>::size_type i = 0; i != boards.size(); i++) {
+            board[i].erase(board[i].begin() + i);
+        }
     }
 
 /**
@@ -300,9 +317,6 @@ private:
         for (vector<int>::size_type i = 0; i != this->boards.size(); i++) {
             res.append(this->boards[i][0]).append("\n");
         }
-//        cout << "get all boads" << endl;
-
-//        cout << res << endl;
         return res;
     }
 
@@ -318,6 +332,7 @@ private:
         for (vector<int>::size_type i = 0; i != board.size(); i++) {
             pos = board[i].find('.');
             if (board[i].substr(0, pos) == id) { // pokud je cislo pred teckou shodne s zadanym ID
+                content.erase(std::remove(content.begin(), content.end(), '\n'), content.end()); // odstraneni eol
                 pos += 2; // nastaveni position na mezeru na ideckem a teckou
                 board[i].replace(pos, string::npos, content);
                 return board[i];
@@ -353,7 +368,6 @@ private:
             for (int j = 0; j < input.size(); j++) {
                 cout << input[i][j] << endl;
             }
-//            std::cout << input.at(i) << ' ';
         }
     }
 
