@@ -20,6 +20,7 @@
 #include <sys/mman.h>
 #include<sys/ipc.h>
 #include<sys/shm.h>
+#include "VectorMapper.h"
 
 #ifndef ISA_SERVER_H
 #define ISA_SERVER_H
@@ -44,6 +45,7 @@ class Server {
 
 private:
     int port;
+    VectorMapper vectorMapper;
     Data data;
 
 
@@ -140,9 +142,9 @@ public:
             if (pid == 0) {
                 segment_size  = shmbuffer.shm_segsz;
 
-                this->data.deserialize(shared_memory, first);
+                this->data.setBoards(this->data.vectorMapper.deserialize(shared_memory, first));
                 dataToSend = this->processClientData(this->parseClientData(acceptSockfd));
-                dataToSharedMemory =this->data.serialize();
+                dataToSharedMemory =this->data.vectorMapper.serialize(this->data.getBoards());
 
                 int n = dataToSharedMemory.length();
                 char char_array[n + 1];
@@ -199,14 +201,6 @@ public:
         return (this->data.process(data));
     }
 
-    void print(vector<vector<string>> const &input) {
-        for (int i = 0; i < input.size(); i++) {
-            for (int j = 0; j < input.size(); j++) {
-                cout << input[i][j] << endl;
-            }
-//            std::cout << input.at(i) << ' ';
-        }
-    }
 };
 
 #endif //ISA_SERVER_H

@@ -25,11 +25,14 @@ using namespace std;
 
 class Data {
 
+
 private:
     vector<vector<string>> boards;
-    VectorMapper vectorMapper;
 
 public:
+    VectorMapper vectorMapper;
+
+
     string process(vector<string> data) {
         string result;
         string method = data[0];
@@ -45,61 +48,15 @@ public:
         return (result);
     }
 
-    string serialize() {
-        string out;
-        for (vector<int>::size_type i = 0; i != this->boards.size(); i++) {
-            for (vector<int>::size_type j = 0; j != this->boards[i].size(); j++) {
-                out.append(this->boards[i][j]).append("\n");
-            }
-            out.append(":\n");
-        }
-        return out;
-    }
-
-    void deserialize(char *in, bool &first) {
-        first = false;
-        vector<vector<string>> boards;
-        vector<string> topic;
-        istringstream iss(in);
-        string line;
-
-        if(first) {
-            this->boards = boards;
-            first = false;
-        }
-
-        while (std::getline(iss, line)) {
-            if (line == ":") {
-                boards.push_back(topic);
-                topic.clear();
-            } else {
-                topic.push_back(line);
-            }
-        }
-        if(!topic.empty()) {
-            boards.push_back(topic);
-            topic.clear();
-        }
+    void setBoards(vector<vector<string>> boards) {
         this->boards = boards;
     }
-
     vector<vector<string>> getBoards() {
         return this->boards;
     }
 
 private:
 
-    string toString(char **in) {
-        string bar;
-        for(int i =0 ; i< strlen(*in);i++)
-        {
-            for(int j =0 ;j<3;j++)
-            {
-                bar += in[i][j];
-            }
-        }
-        return bar;
-    }
 
 
     string processGET(vector<string> params) {
@@ -327,7 +284,7 @@ private:
  * @param content
  * @return
  */
-    string update(vector<string> &board, string id, string content) {
+    bool update(vector<string> &board, string id, string content) {
         size_t pos;
         for (vector<int>::size_type i = 0; i != board.size(); i++) {
             pos = board[i].find('.');
@@ -335,9 +292,10 @@ private:
                 content.erase(std::remove(content.begin(), content.end(), '\n'), content.end()); // odstraneni eol
                 pos += 2; // nastaveni position na mezeru na ideckem a teckou
                 board[i].replace(pos, string::npos, content);
-                return board[i];
+                return true;
             }
         }
+        return false;
     }
 
 /**
@@ -351,9 +309,8 @@ private:
     bool updateTopicById(string boardName, string id, string content) {
         bool found = false;
         for (vector<int>::size_type i = 0; i != this->boards.size(); i++) {
-            if (this->boards[i][0] == boardName) {
-                found = true;
-                update(this->boards[i], id, content);
+            if (this->boards[i][0] == boardName && this->boards[i].size() >= atoi(id.c_str())) {
+                return update(this->boards[i], id, content);
             }
         }
         return found;
@@ -362,15 +319,7 @@ private:
     string convertName(string name) {
         return name.insert(0, "[").append("]");
     }
-
-    void print(vector<vector<string>> const &input) {
-        for (int i = 0; i < input.size(); i++) {
-            for (int j = 0; j < input.size(); j++) {
-                cout << input[i][j] << endl;
-            }
-        }
-    }
-
 };
+
 
 #endif //ISA_DATA_H
