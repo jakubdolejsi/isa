@@ -2,11 +2,9 @@
 // Created by jakub on 03.10.19.
 //
 
-#include <cstdio>
-#include <cstdlib>
-#include <string>
-#include <regex>
-#include <utility>
+
+
+#include "RequestParser.h"
 
 #define GET "GET"
 #define POST "POST"
@@ -17,26 +15,11 @@
             (strncmp(X, Y, strlen(X)) == 0) ? true : false\
 
 
-using namespace std;
-
-class RequestParser {
-
-private:
-    /**
-     * @brief request
-     */
-    string request;
-
-public:
-    explicit RequestParser(string request) {
+RequestParser::RequestParser(string request) {
         this->request = move(request);
     }
 
-    /**
-     * @brief Dle metody dotoazu zavola prislusnou metodu na parsovani dotazu
-     * @return
-     */
-    vector<string> process() {
+vector<string> RequestParser::process() {
         vector<string> response;
         char *method;
         char buf[this->request.size() + 1];
@@ -44,7 +27,7 @@ public:
 
         method = strtok(buf, " ");
         if (COMPARE(method, GET)) {
-            response = this->processGET();
+            response = processGET();
         } else if (COMPARE(method, POST)) {
             response = this->processPOST();
         } else if (COMPARE(method, PUT)) {
@@ -59,27 +42,24 @@ public:
         return (response);
     }
 
-private:
-
-
-    vector<string> processGET() {
+vector<string> RequestParser::processGET() {
         return (this->parseHeader(this->request, false));
     }
 
-    vector<string> processPOST() {
+vector<string> RequestParser::processPOST() {
         return (this->parseHeader(this->request, true));
     }
 
-    vector<string> processPUT() {
+vector<string> RequestParser::processPUT() {
         return (this->parseHeader(this->request, true));
     }
 
-    vector<string> processDELETE() {
+vector<string> RequestParser::processDELETE() {
         return (this->parseHeader(this->request, false));
     }
 
 
-    vector<string> parseHeader(const string &inRequest, bool content) {
+vector<string> RequestParser::parseHeader(const string &inRequest, bool content) {
         vector<string> arr;
         string parsedRequest;
         size_t position = inRequest.find('\n');
@@ -89,7 +69,7 @@ private:
             exit(20);
         }
         parsedRequest = inRequest.substr(0, httpPosition);
-        arr = this->toArray(parsedRequest, arr);
+    arr = this->toArray(parsedRequest);
         if (!this->checkIfHostIsPresent(inRequest)) {
             // hhtp/1.1 musi obsahovat host
             exit(65);
@@ -100,8 +80,8 @@ private:
         return (arr);
     }
 
-    vector<string> toArray(string s, vector<string> arr) {
-
+vector<string> RequestParser::toArray(string s) {
+    vector<string> arr;
         replace(s.begin(), s.end(), '/', ' ');
         istringstream iss(s);
         string word;
@@ -114,7 +94,7 @@ private:
     }
 
 
-    string searchForContent(const string &inRequest) {
+string RequestParser::searchForContent(const string &inRequest) {
         string line;
         istringstream stream(inRequest);
         bool cLength = false;
@@ -142,7 +122,7 @@ private:
     }
 
 
-    string last(string s) {
+string RequestParser::last(string s) {
         int fin = strlen(s.c_str());
         int len = 0;
         string x;
@@ -155,9 +135,9 @@ private:
         return (s.substr(len));
     }
 
-    bool checkIfHostIsPresent(const string &lines) {
+bool RequestParser::checkIfHostIsPresent(const string &inRequest) {
         string line;
-        istringstream stream(lines);
+    istringstream stream(inRequest);
         bool found = false;
 
         while (getline(stream, line)) {
@@ -167,5 +147,3 @@ private:
         }
         return found;
     }
-
-};

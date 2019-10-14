@@ -1,22 +1,10 @@
 //
 // Created by jakub on 02.10.19.
 //
-#include <netinet/in.h>
-#include <sys/wait.h>
-#include <unistd.h>
-#include <sys/stat.h>
-#include <sys/ipc.h>
-#include <sys/shm.h>
-#include <mutex>
-#include <iostream>
-#include <utility>
-#include "VectorMapper.cpp"
-#include "RequestParser.cpp"
-#include "Data.cpp"
 
-
-#ifndef ISA_SERVER_H
-#define ISA_SERVER_H
+#include "Server.h"
+#include "../Helpers/VectorMapper.h"
+#include "RequestParser.h"
 
 
 #define SA struct sockaddr
@@ -31,196 +19,175 @@
             fprintf(stderr, M_TEXT);\
             exit(13);\
 
-using namespace std;
+
+Server::Server(int port) {
+    this->port = port;
+    this->data = Data();
+}
 
 
-class Server {
+void Server::mainLoop() {
+    sockaddr_in serverAddr, clientAddr;
+    mutex mtx;
+    int sockfd, acceptSockfd;
+    string dataToSend;
+    string dataToSharedMemory;
+    int segment_id;
+    char *shared_memory;
+    struct shmid_ds shmbuffer;
+    int segment_size;
+    bool first = true;
 
-private:
-    /**
-     * @brief port
-     */
-    int port;
-    /**
-     * @brief data
-     */
-    Data data;
 
+    shared_memory = this->createSharedMemory(segment_id);
 
-public:
+    shmctl(segment_id, IPC_STAT, &shmbuffer);
+    char *x = const_cast<char *>(TEST_DATA); // nejaka vstupni data..
+    sprintf(shared_memory, x, sizeof(x));
 
-    explicit Server(int port) {
-        this->port = port;
-        this->data = Data();
-    }
+    sockfd = this->createSocket();
+    serverAddr = this->fillStructure();
+    this->bindSocket(sockfd, serverAddr);
+    this->Listen(sockfd);
 
-private:
+    while (true) {
 
-    sockaddr_in fillStructure() {
-        struct sockaddr_in serverAddr;
-        bzero(&serverAddr, sizeof(serverAddr));
-        serverAddr.sin_family = AF_INET;
-        serverAddr.sin_addr.s_addr = htonl(INADDR_ANY);
-        serverAddr.sin_port = htons(this->port);
+        acceptSockfd = this->Accept(sockfd, clientAddr);
 
-        return (serverAddr);
-    }
+        int pid = fork();
+        if (pid == 0) {
 
-    int createSocket() {
-        int option = 1;
-        int sockfd = socket(AF_INET, SOCK_STREAM, 0);
-        if ((sockfd < 0)) {
-            perror("socketError:");
-            exit(10);
+            mtx.lock();
+            this->data.setBoards(VectorMapper::deserialize(shared_memory, first));
+            dataToSend = this->processClientData(this->parseClientData(acceptSockfd));
+            dataToSharedMemory = VectorMapper::serialize(this->data.getBoards());
+
+            char char_array[dataToSharedMemory.length() + 1];
+            strcpy(char_array, dataToSharedMemory.c_str());
+            sprintf(shared_memory, char_array, sizeof(char_array));
+
+            mtx.unlock();
+            shmdt(shared_memory);
+
+            this->Send(acceptSockfd, dataToSend);
+            close(sockfd);
+            exit(EXIT_SUCCESS);
         }
-        return sockfd;
+        wait(nullptr);
+        close(acceptSockfd);
     }
+    close(sockfd);
+//    cout << "dojeli jsme kamo" << endl;
 
-    void bindSocket(int sockfd, sockaddr_in serverAddr) {
+}
 
-        if (bind(sockfd, (SA *) &serverAddr, sizeof(serverAddr)) < 0) {
-            perror("bind Error: ");
-            exit(10);
-        }
+
+sockaddr_in Server::fillStructure() {
+    struct sockaddr_in serverAddr;
+    bzero(&serverAddr, sizeof(serverAddr));
+    serverAddr.sin_family = AF_INET;
+    serverAddr.sin_addr.s_addr = htonl(INADDR_ANY);
+    serverAddr.sin_port = htons(this->port);
+
+    return (serverAddr);
+}
+
+int Server::createSocket() {
+    int option = 1;
+    int sockfd = socket(AF_INET, SOCK_STREAM, 0);
+    if ((sockfd < 0)) {
+        perror("socketError:");
+        exit(10);
     }
+    return sockfd;
+}
 
+void Server::bindSocket(int sockfd, sockaddr_in serverAddr) {
 
-    void Listen(int sockfd) {
-        if (listen(sockfd, BACKLOG) < 0) {
-            perror("listen eror: ");
-            exit(10);
-        }
+    if (bind(sockfd, (SA *) &serverAddr, sizeof(serverAddr)) < 0) {
+        perror("bind Error: ");
+        exit(10);
     }
+}
 
-    int Accept(int sockfd, sockaddr_in clientAddr) {
-        socklen_t clientAddrSize = sizeof(clientAddr);
 
-        int acceptedSock = accept(sockfd, (SA *) &clientAddr, &clientAddrSize);
-
-        if (acceptedSock < 0) {
-            perror("accept error: ");
-            exit(10);
-        }
-        return (acceptedSock);
+void Server::Listen(int sockfd) {
+    if (listen(sockfd, BACKLOG) < 0) {
+        perror("listen eror: ");
+        exit(10);
     }
+}
 
+int Server::Accept(int sockfd, sockaddr_in clientAddr) {
+    socklen_t clientAddrSize = sizeof(clientAddr);
 
-public:
-    void mainLoop() {
-        sockaddr_in serverAddr, clientAddr;
-        mutex mtx;
-        int sockfd, acceptSockfd;
-        string dataToSend;
-        string dataToSharedMemory;
-        int segment_id;
-        char *shared_memory;
-        struct shmid_ds shmbuffer;
-        int segment_size;
-        bool first = true;
+    int acceptedSock = accept(sockfd, (SA *) &clientAddr, &clientAddrSize);
 
-
-        shared_memory = this->createSharedMemory(segment_id);
-
-        shmctl(segment_id, IPC_STAT, &shmbuffer);
-        char *x = const_cast<char *>(TEST_DATA); // nejaka vstupni data..
-        sprintf(shared_memory, x, sizeof(x));
-
-        sockfd = this->createSocket();
-        serverAddr = this->fillStructure();
-        this->bindSocket(sockfd, serverAddr);
-        this->Listen(sockfd);
-
-        while (true) {
-
-            acceptSockfd = this->Accept(sockfd, clientAddr);
-
-            int pid = fork();
-            if (pid == 0) {
-
-                mtx.lock();
-                this->data.setBoards(this->data.vectorMapper.deserialize(shared_memory, first));
-                dataToSend = this->processClientData(this->parseClientData(acceptSockfd));
-                dataToSharedMemory = this->data.vectorMapper.serialize(this->data.getBoards());
-
-                char char_array[dataToSharedMemory.length() + 1];
-                strcpy(char_array, dataToSharedMemory.c_str());
-                sprintf(shared_memory, char_array, sizeof(char_array));
-
-                mtx.unlock();
-                shmdt(shared_memory);
-
-                this->Send(acceptSockfd, dataToSend);
-                close(sockfd);
-                exit(EXIT_SUCCESS);
-            }
-            wait(nullptr);
-            close(acceptSockfd);
-        }
-        close(sockfd);
-        cout << "dojeli jsme kamo" << endl;
-
+    if (acceptedSock < 0) {
+        perror("accept error: ");
+        exit(10);
     }
+    return (acceptedSock);
+}
 
-    char *createSharedMemory(int &segment_id) {
-        shmctl(segment_id, IPC_RMID, nullptr);
-        segment_id = shmget(IPC_PRIVATE, 0x6400,
-                            IPC_CREAT | IPC_EXCL | S_IRUSR | S_IWUSR);
 
-        return (char *) shmat(segment_id, nullptr, 0);
+char *Server::createSharedMemory(int &segment_id) {
+    shmctl(segment_id, IPC_RMID, nullptr);
+    segment_id = shmget(IPC_PRIVATE, 0x6400,
+                        IPC_CREAT | IPC_EXCL | S_IRUSR | S_IWUSR);
+
+    return (char *) shmat(segment_id, nullptr, 0);
+}
+
+int *Server::createMutexSharedMemory(int &segment_id, struct shmid_ds &shmbuffer) {
+    shmctl(segment_id, IPC_RMID, nullptr);
+    segment_id = shmget(IPC_PRIVATE, 0x6400,
+                        IPC_CREAT | IPC_EXCL | S_IRUSR | S_IWUSR);
+
+    return (int *) shmat(segment_id, nullptr, 0);
+}
+
+vector<string> Server::parseClientData(int clientSock) {
+    string recvData;
+    vector<string> response;
+    recvData = this->Recv(clientSock, 0);
+
+    RequestParser requestParser = RequestParser(recvData);
+    response = requestParser.process();
+
+    return (response);
+}
+
+void Server::Send(int acceptSockfd, const string &data) {
+    char newData[data.size() + 1];
+    strcpy(newData, data.c_str());
+    if (send(acceptSockfd, newData, strlen(newData), 0) < 0) {
+        SOCKET_ERR("Send error: ", SEND_SOCK_ERR)
     }
+}
 
-    int *createMutexSharedMemory(int &segment_id, struct shmid_ds &shmbuffer) {
-        shmctl(segment_id, IPC_RMID, nullptr);
-        segment_id = shmget(IPC_PRIVATE, 0x6400,
-                            IPC_CREAT | IPC_EXCL | S_IRUSR | S_IWUSR);
 
-        return (int *) shmat(segment_id, nullptr, 0);
+string Server::Recv(int clientSock, int flag) {
+    char data[BUFF_SIZE];
+    bzero(data, BUFF_SIZE);
+    int recData = recv(clientSock, data, BUFF_SIZE, flag);
+
+    if (recData < 0) {
+        SOCKET_ERR("Recv", "Recv error occured ")
+    } else if (recData == 0) {
+        this->endOfData(clientSock);
     }
+    string s(data);
+    return (s);
+}
 
-    vector<string> parseClientData(int clientSock) {
-        string recvData;
-        vector<string> response;
-        recvData = this->Recv(clientSock, 0);
+string Server::processClientData(vector<string> data) {
+    return (this->data.process(move(data)));
+}
 
-        RequestParser requestParser = RequestParser(recvData);
-        response = requestParser.process();
+void Server::endOfData(int sockfd) {
+    close(sockfd);
+//    cout << "dojeli jsme kamo" << endl;
+    exit(0);
+}
 
-        return (response);
-    }
-
-    void Send(int acceptSockfd, const string &data) {
-        char newData[data.size() + 1];
-        strcpy(newData, data.c_str());
-        if (send(acceptSockfd, newData, strlen(newData), 0) < 0) {
-            SOCKET_ERR("Send error: ", SEND_SOCK_ERR)
-        }
-    }
-
-
-    string Recv(int clientSock, int flag) {
-        char data[BUFF_SIZE];
-        bzero(data, BUFF_SIZE);
-        int recData = recv(clientSock, data, BUFF_SIZE, flag);
-
-        if (recData < 0) {
-            SOCKET_ERR("Recv", "Recv error occured ")
-        } else if (recData == 0) {
-            this->endOfData(clientSock);
-        }
-        string s(data);
-        return (s);
-    }
-
-    string processClientData(vector<string> data) {
-        return (this->data.process(move(data)));
-    }
-
-    void endOfData(int sockfd) {
-        close(sockfd);
-        cout << "dojeli jsme kamo" << endl;
-        exit(0);
-    }
-
-};
-
-#endif //ISA_SERVER_H

@@ -3,5 +3,5 @@ project(isa)
 
 set(CMAKE_CXX_STANDARD 14)
 
-add_executable(isaserver isaserver.cpp server/ServerArgumentParser.h error/Error.h server/Server.h server/RequestParser.h server/Data.h server/VectorMapper.h)
-add_executable(isaclient isaclient.cpp client/ClientArgumentParser.h error/Error.h client/Client.h)
+add_executable(isaserver isaserver.cpp server/ServerArgumentParser.cpp error/Error.h server/Server.cpp server/RequestParser.cpp server/Data.cpp Helpers/VectorMapper.cpp server/Data.h server/RequestParser.h server/Server.h server/ServerArgumentParser.h Helpers/VectorMapper.h)
+add_executable(isaclient isaclient.cpp client/ClientArgumentParser.cpp error/Error.h client/Client.cpp)

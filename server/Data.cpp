@@ -3,9 +3,8 @@
 //
 
 
-#include <regex>
-#include <utility>
-#include "VectorMapper.cpp"
+#include "../Helpers/VectorMapper.h"
+#include "Data.h"
 
 #define DUPLICATE "409"
 #define NO_DATA "404"
@@ -17,342 +16,224 @@
             (strncmp(X, Y, strlen(X)) == 0) ? true : false\
 
 
-using namespace std;
 
-/**
- * @brief Objekt, ktery se stara a zpraovani dat requestu
- */
-class Data {
-
-
-private:
-    /**
-     * @brief Vektor vektoru stringu, ktery uchovava informace o nastenkach
-     */
-    vector<vector<string>> boards;
-
-public:
-    /**
-     * @brief Vektor mapper starajici se o serializace / deserializace nastenek
-     */
-    VectorMapper vectorMapper;
-
-
-    /**
-     * @brief Zpracuje data requestu
-     * @param data Vstupni vektor dat, ktery mu preda object RequestParser
-     * @return Vraci zpracovana http data
-     */
-    string process(vector<string> data) {
-        string result;
-        string method = data[0];
-        if (method == "GET") {
-            result = this->processGET(data);
-        } else if (method == "POST") {
-            result = this->processPOST(data);
-        } else if (method == "DELETE") {
-            result = this->processDELETE(data);
-        } else if (method == "PUT") {
-            result = this->processPUT(data);
-        }
-        return (result);
+string Data::process(vector<string> data) {
+    string result;
+    string method = data[0];
+    if (method == "GET") {
+        result = this->processGET(data);
+    } else if (method == "POST") {
+        result = this->processPOST(data);
+    } else if (method == "DELETE") {
+        result = this->processDELETE(data);
+    } else if (method == "PUT") {
+        result = this->processPUT(data);
     }
+    return (result);
+}
 
 
-    /**
-     * @brief Nastavi vektor boards dle parametru
-     * @param boards vektor boardu
-     */
-    void setBoards(vector<vector<string>> boards) {
-        this->boards = move(boards);
+void Data::setBoards(vector<vector<string>> boards) {
+    this->boards = move(boards);
+}
+
+vector<vector<string>> Data::getBoards() {
+    return this->boards;
+}
+
+
+string Data::processGET(vector<string> params) {
+    string res;
+
+    if (params[1] == "boards") {
+        res = this->getAllBoards();
+    } else {
+        res = this->getBoardByName(this->convertName(params[2]));
     }
+    return (!res.empty() ? this->querySucess(G_P_D_OK, res) : this->queryFailed(NO_DATA));
+}
 
-    /**
-     * @brief Ziska vektor boards
-     * @return
-     */
-    vector<vector<string>> getBoards() {
-        return this->boards;
+
+string Data::processPOST(vector<string> params) {
+    string firstParam = params[1]; // boards || board
+    string name = params[2]; // <name>
+    bool res;
+
+    if (firstParam == "boards") { // vtvori novou prazdnou nastenku s nazvem <name>
+        res = this->createNewBoard(this->convertName(name));
+        return (res ? this->querySucess(POST_OK) : this->queryFailed(DUPLICATE));
+
+    } else {
+        res = this->insertNewTopic(this->convertName(name), params[3]);
+        return (res ? this->querySucess(POST_OK) : this->queryFailed(NO_DATA));
     }
+}
 
-private:
+
+string Data::processPUT(vector<string> params) {
+    bool res;
+    res = this->updateTopicById(this->convertName(params[2]), params[3], params[4]);
+
+    return (res ? this->querySucess(G_P_D_OK) : this->queryFailed(NO_DATA));
+}
 
 
-    /**
-     * @brief Zpracuje GET request
-     * @param params vektor parametru
-     * @return Vraci hhtp odpoved dle validity dotazu
-     */
-    string processGET(vector<string> params) {
-        string res;
-
-        if (params[1] == "boards") {
-            res = this->getAllBoards();
-        } else {
-            res = this->getBoardByName(this->convertName(params[2]));
-        }
-        return (!res.empty() ? this->querySucess(G_P_D_OK, res) : this->queryFailed(NO_DATA));
+string Data::processDELETE(vector<string> params) {
+    bool res;
+    string boardName = params[2];
+    if (params[1] == "board") {
+        string id = params[3];
+        res = this->deleteTopicByID(this->convertName(boardName), id);
+    } else {
+        res = this->deleteBoardByName(this->convertName(boardName));
     }
-
-    /**
-     * @brief Zpracuje POST request
-     * @param params vektor parametru
-     * @return Vraci hhtp odpoved dle validity dotazu
-     */
-    string processPOST(vector<string> params) {
-        string firstParam = params[1]; // boards || board
-        string name = params[2]; // <name>
-        bool res;
-
-        if (firstParam == "boards") { // vtvori novou prazdnou nastenku s nazvem <name>
-            res = this->createNewBoard(this->convertName(name));
-            return (res ? this->querySucess(POST_OK) : this->queryFailed(DUPLICATE));
-
-        } else {
-            res = this->insertNewTopic(this->convertName(name), params[3]);
-            return (res ? this->querySucess(POST_OK) : this->queryFailed(NO_DATA));
-        }
-    }
-
-/**
- * @brief Zpracuje PUT request
- * @param params vektor parametru
- * @return Vraci hhtp odpoved dle validity dotazu
- */
-    string processPUT(vector<string> params) {
-        bool res;
-        res = this->updateTopicById(this->convertName(params[2]), params[3], params[4]);
-
-        return (res ? this->querySucess(G_P_D_OK) : this->queryFailed(NO_DATA));
-    }
-
-    /**
-     * @brief Zpracuje DELETE request
-     * @param params vektor parametru
-     * @return Vraci hhtp odpoved dle validity dotazu
-     */
-    string processDELETE(vector<string> params) {
-        bool res;
-        string boardName = params[2];
-        if (params[1] == "board") {
-            string id = params[3];
-            res = this->deleteTopicByID(this->convertName(boardName), id);
-        } else {
-            res = this->deleteBoardByName(this->convertName(boardName));
-        }
-        return (res ? this->querySucess(G_P_D_OK) : this->queryFailed(NO_DATA));
-    }
-
-    /**
-     * @brief Vrati http hlavicku OK dotazu
-     * @param code Kod http hlavicky validniho dotazu
-     * @param data volitelny parametr, pokud budeme chtit krom hlavicky poslat i data
-     * @return vrati http odpoved
-     */
-    string querySucess(const string &code, const string &data = "") {
-        string header = string("HTTP/1.1 ").append(code).append(" OK\r\n\r\n").append(data);
-        return header;
-    }
-
-    /**
-     * @brief Vrati http hlavicku NOK dotazu
-     * @param code Kod hlavicky chybneho dotazu
-     * @return vrati http odpoved
-     */
-    string queryFailed(const string &code) {
-        string header = string("HTTP/1.1 ").append(code).append(" NOK\r\n\r\n");
-        return header;
-    }
-
-    /**
-     * @brief Overi duplicitu nastenky
-     * @param item hledany item
-     * @return true pokud je duplicita, false pokud je zaznam unikatni ??
-     */
-    bool checkDuplicity(const vector<string> &item) {
-        return !(find(this->boards.begin(), this->boards.end(), item) != this->boards.end());
-    }
-
-    /**
-     * @brief Vytvori novou nastenku
-     * @param boardName nazev vytvarene nastenky
-     * @return true pokud vytvareni probehlo v poradku, jinak false
-     */
-    bool createNewBoard(const string &boardName) {
-
-        vector<string> cont;
-        cont.push_back(boardName);
-        bool ok = checkDuplicity(cont);
-        if (!ok) {
-            return false;
-        }
-        this->boards.push_back(cont);
-
-        return true;
-    }
-
-/**
- * @brief POST /board/<name>
- * @param boardName
- * @param content
- * @return
- */
-    bool insertNewTopic(const string &boardName, string &content) {
-
-        content.erase(remove(content.begin(), content.end(), '\n'), content.end());
-        vector<string> cont;
-        cont.push_back(boardName);
-        if (this->checkDuplicity(cont)) {
-            return false;
-        }
-        static int counter;
-        string x;
-        for (vector<int>::size_type i = 0; i != this->boards.size(); i++) {
-            if (this->boards[i][0] == boardName) {
-                counter = boards[i].size();
-                this->boards[i].push_back((to_string(counter)).append(". ").append(content)); // vlozi prispevek
-                counter++;
-            }
-        }
-        return true;
-    }
-
-/**
- * @brief DELETE /boards/<name>
- * @param boardName
- * @return
- */
-    bool deleteBoardByName(const string &boardName) {
-        bool found = false;
-        for (vector<int>::size_type i = 0; i != this->boards.size(); i++) {
-            if (this->boards[i][0] == boardName) {
-                found = true;
-                this->boards.erase(this->boards.begin() + i);
-//                this->boards[i].clear();
-//                this->boards[i].erase(this->boards[i].begin(), this->boards[i].end());
-            }
-        }
-        return found;
-    }
+    return (res ? this->querySucess(G_P_D_OK) : this->queryFailed(NO_DATA));
+}
 
 
-/**
- * @brief Zmeni poradi nasledujicich prvku po akutalnim mazanem
- * @param board
- * @param index
- */
-    void reformateTopics(vector<string> &board, int index) {
-        string oldTopicNumber;
-        string newTopicNumber = to_string(index).append(". ");
-        for (vector<int>::size_type i = index; i != board.size(); i++) {
-            oldTopicNumber = board[i].substr(0, 3);
-            board[i] = regex_replace(board[i], regex(oldTopicNumber), newTopicNumber);
-        }
-    }
+string Data::querySucess(const string &code, const string &data) {
+    string header = string("HTTP/1.1 ").append(code).append(" OK\r\n\r\n").append(data);
+    return header;
+}
 
-/**
- * @brief DELETE /board/<name>/<id>
- * @param boardName
- * @param id
- * @return
- */
-    bool deleteTopicByID(const string &boardName, const string &id) {
-        int index = atoi(id.c_str());
-        bool found = false;
-        for (vector<int>::size_type i = 0; i != this->boards.size(); i++) {
-            if (this->boards[i][0] == boardName) {
-                found = true;
-                this->boards[i].erase(this->boards[i].begin() + index);
-                reformateTopics(this->boards[i], index);
-            }
-        }
-        return found;
-    }
 
-/**
- * @brief Ziska topiky boardu
- * @param boards
- */
-    string getTopics(int j) {
-        string res;
-        for (vector<int>::size_type i = 0; i != this->boards[j].size(); i++) {
-            res.append(this->boards[j][i]).append("\n");
-        }
-        return res;
-    }
+string Data::queryFailed(const string &code) {
+    string header = string("HTTP/1.1 ").append(code).append(" NOK\r\n\r\n");
+    return header;
+}
 
-/**
- * @brief GET /board/<name>
- * @param boardName
- * @return
- */
-    string getBoardByName(const string &boardName) {
-        for (vector<int>::size_type i = 0; i != this->boards.size(); i++) {
-            if (this->boards[i][0] == boardName) {
-                return this->getTopics(i);
-            }
-        }
-        return "";
-    }
 
-/**
- * @brief GET /boards
- * @return
- */
-    string getAllBoards() {
-        string res;
-        for (vector<int>::size_type i = 0; i != this->boards.size(); i++) {
-            res.append(this->boards[i][0]).append("\n");
-        }
-        return res;
-    }
+bool Data::checkDuplicity(const vector<string> &item) {
+    return !(find(this->boards.begin(), this->boards.end(), item) != this->boards.end());
+}
 
-/**
- * @brief Nahradi content aktualniho prispevku za novy
- * @param board
- * @param id
- * @param content
- * @return
- */
-    bool update(vector<string> &board, const string &id, string content) {
-        size_t pos;
-        for (vector<int>::size_type i = 0; i != board.size(); i++) {
-            pos = board[i].find('.');
-            if (board[i].substr(0, pos) == id) { // pokud je cislo pred teckou shodne s zadanym ID
-                content.erase(remove(content.begin(), content.end(), '\n'), content.end()); // odstraneni eol
-                pos += 2; // nastaveni position na mezeru na ideckem a teckou
-                board[i].replace(pos, string::npos, content);
-                return true;
-            }
-        }
+
+bool Data::createNewBoard(const string &boardName) {
+
+    vector<string> cont;
+    cont.push_back(boardName);
+    bool ok = checkDuplicity(cont);
+    if (!ok) {
         return false;
     }
+    this->boards.push_back(cont);
 
-/**
- * @brief PUT /board/<name>/<id>
- * @param boardName
- * @param id
- * @param content
- * @return
- */
-    bool updateTopicById(const string &boardName, const string &id, const string &content) {
-        bool found = false;
-        for (vector<int>::size_type i = 0; i != this->boards.size(); i++) {
-            if (this->boards[i][0] == boardName && this->boards[i].size() >= atoi(id.c_str())) {
-                return update(this->boards[i], id, content);
-            }
+    return true;
+}
+
+
+bool Data::insertNewTopic(const string &boardName, string &content) {
+
+    content.erase(remove(content.begin(), content.end(), '\n'), content.end());
+    vector<string> cont;
+    cont.push_back(boardName);
+    if (this->checkDuplicity(cont)) {
+        return false;
+    }
+    static int counter;
+    string x;
+    for (vector<int>::size_type i = 0; i != this->boards.size(); i++) {
+        if (this->boards[i][0] == boardName) {
+            counter = boards[i].size();
+            this->boards[i].push_back((to_string(counter)).append(". ").append(content)); // vlozi prispevek
+            counter++;
         }
-        return found;
     }
+    return true;
+}
 
-    /**
-     * @brief Prida hranate zavorky pred a za nazev boardu
-     * @param name
-     * @return
-     */
-    string convertName(string name) {
-        return name.insert(0, "[").append("]");
+
+bool Data::deleteBoardByName(const string &boardName) {
+    bool found = false;
+    for (vector<int>::size_type i = 0; i != this->boards.size(); i++) {
+        if (this->boards[i][0] == boardName) {
+            found = true;
+            this->boards.erase(this->boards.begin() + i);
+//                this->boards[i].clear();
+//                this->boards[i].erase(this->boards[i].begin(), this->boards[i].end());
+        }
     }
-};
+    return found;
+}
+
+
+void Data::reformateTopics(vector<string> &board, int index) {
+    string oldTopicNumber;
+    string newTopicNumber = to_string(index).append(". ");
+    for (vector<int>::size_type i = index; i != board.size(); i++) {
+        oldTopicNumber = board[i].substr(0, 3);
+        board[i] = regex_replace(board[i], regex(oldTopicNumber), newTopicNumber);
+    }
+}
+
+
+bool Data::deleteTopicByID(const string &boardName, const string &id) {
+    int index = atoi(id.c_str());
+    bool found = false;
+    for (vector<int>::size_type i = 0; i != this->boards.size(); i++) {
+        if (this->boards[i][0] == boardName) {
+            found = true;
+            this->boards[i].erase(this->boards[i].begin() + index);
+            reformateTopics(this->boards[i], index);
+        }
+    }
+    return found;
+}
+
+string Data::getTopics(int j) {
+    string res;
+    for (vector<int>::size_type i = 0; i != this->boards[j].size(); i++) {
+        res.append(this->boards[j][i]).append("\n");
+    }
+    return res;
+}
+
+string Data::getBoardByName(const string &boardName) {
+    for (vector<int>::size_type i = 0; i != this->boards.size(); i++) {
+        if (this->boards[i][0] == boardName) {
+            return this->getTopics(i);
+        }
+    }
+    return "";
+}
+
+
+string Data::getAllBoards() {
+    string res;
+    for (vector<int>::size_type i = 0; i != this->boards.size(); i++) {
+        res.append(this->boards[i][0]).append("\n");
+    }
+    return res;
+}
+
+
+bool Data::update(vector<string> &board, const string &id, string content) {
+    size_t pos;
+    for (vector<int>::size_type i = 0; i != board.size(); i++) {
+        pos = board[i].find('.');
+        if (board[i].substr(0, pos) == id) { // pokud je cislo pred teckou shodne s zadanym ID
+            content.erase(remove(content.begin(), content.end(), '\n'), content.end()); // odstraneni eol
+            pos += 2; // nastaveni position na mezeru na ideckem a teckou
+            board[i].replace(pos, string::npos, content);
+            return true;
+        }
+    }
+    return false;
+}
+
+bool Data::updateTopicById(const string &boardName, const string &id, const string &content) {
+    bool found = false;
+    for (vector<int>::size_type i = 0; i != this->boards.size(); i++) {
+        if (this->boards[i][0] == boardName && this->boards[i].size() >= atoi(id.c_str())) {
+            return update(this->boards[i], id, content);
+        }
+    }
+    return found;
+}
+
+
+string Data::convertName(string name) {
+    return name.insert(0, "[").append("]");
+}
 
 
