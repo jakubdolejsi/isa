@@ -4,46 +4,21 @@
 
 
 
-#include <cstring>
 #include "../error/Error.h"
-#include "Client.cpp"
+#include "ClientArgumentParser.h"
 
 
 #define COMPARE(X, Y)\
             (strncmp(X, Y, strlen(X)) == 0) ? true : false\
 
-using namespace std;
-
-/**
- * @brief Trida na parsovani argumentu
- */
-class ClientArgumentParser {
 
 
-private:
-    string host = "";
-    int port = 0;
-    string request{};
-    int argc;
-    char **argv;
-    const char *content;
-
-
-public:
-    /**
-     * @brief Konstruktor
-     * @param argc
-     * @param argv
-     */
-    ClientArgumentParser(int argc, char **argv) {
+ClientArgumentParser::ClientArgumentParser(int argc, char **argv) {
         this->argc = argc;
         this->argv = argv;
     }
 
-    /**
-     * @brief Metoda, kterou se spusi parsovani
-     */
-    void parse() {
+void ClientArgumentParser::parse() {
         bool helpOption = false;
         if (this->validateArgumentCount() == 7) {
             helpOption = true;
@@ -53,27 +28,19 @@ public:
         this->isSetHost();
     }
 
-    Client createClient() {
-        return Client(this->request, this->host, this->port, this->content);
+Client ClientArgumentParser::createClient() {
+    return Client(this->request, this->host, this->port);
     }
 
 
-private:
-
-    /**
-     * @brief Overeni parametru
-     * @return
-     */
-    int validateArgumentCount() {
+int ClientArgumentParser::validateArgumentCount() {
         if (this->argc < 6) { EXIT(ARGUMENT_COUNT_ERROR)
         }
         return this->argc;
     }
 
-    /**
-     * @brief Iterace pres pole argumentu
-     */
-    void iter() {
+
+void ClientArgumentParser::iter() {
         for (int i = 1; i < this->argc; ++i) {
             if (strncmp(this->argv[i], "-H", strlen(this->argv[i])) == 0) {
                 this->parseHost(this->argv, i); //TODO  mozno i + 1 !!
@@ -87,12 +54,8 @@ private:
         }
     }
 
-    /**
-     * @brief
-     * @param inCommand
-     * @param i
-     */
-    void parseCommand(char **inCommand, int &i) {
+
+void ClientArgumentParser::parseCommand(char **inCommand, int &i) {
         if (COMPARE("boards", inCommand[i])) {
             this->processBoards(inCommand, i);
         } else if (COMPARE("board", inCommand[i])) {
@@ -100,45 +63,31 @@ private:
         } else if (COMPARE("item", inCommand[i])) {
             this->processItem(inCommand, i);
         } else {
-            cout << "Spatny request" << endl;
             exit(432);
         }
     }
 
-    void setHelp() {
+void ClientArgumentParser::setHelp() {
 
     }
 
-    /**
-     * @brief  GET /boards
-     * @param inCommand
-     * @param i
-     */
-    void processBoards(char **inCommand, int &i) {
+void ClientArgumentParser::processBoards(int &i) {
         i++;
         this->request = string("GET /boards HTTP/1.1\r\nHost: ").append(this->host).append("\r\n\r\n");
     }
 
-    /**
-     * @brief GET /board/<name>
-     * @param inCommand
-     * @param i
-     */
-    void processBoardsList(char **inCommand, int &i) {
+
+void ClientArgumentParser::processBoardsList(char **inCommand, int &i) {
         i++;
-        nullCheck(inCommand[i]);
+    this->nullCheck(inCommand[i]);
         char *name = inCommand[i];
         this->request = string("GET /board/").append(name).append(" HTTP/1.1\r\nHost: ").append(this->host).append(
                 "\r\n\r\n");
 
     }
 
-    /**
-     * @brief
-     * @param inCommand
-     * @param i
-     */
-    void processBoard(char **inCommand, int &i) {
+
+void ClientArgumentParser::processBoard(char **inCommand, int &i) {
         i++;
         this->nullCheck(inCommand[i]);
         if (COMPARE(inCommand[i], "add")) { // board/add
@@ -148,17 +97,12 @@ private:
         } else if (COMPARE(inCommand[i], "list")) {
             this->processBoardsList(inCommand, i);
         } else {
-            cout << "neznamy prikaz na request" << endl;
             exit(420);
         }
     }
 
-    /**
-     * @brief DELETE /boards/<name>
-     * @param inCommand
-     * @param i
-     */
-    void processBoardDelete(char **inCommand, int &i) {
+
+void ClientArgumentParser::processBoardDelete(char **inCommand, int &i) {
         i++;
         nullCheck(inCommand[i]);
         char *name = inCommand[i];
@@ -167,12 +111,8 @@ private:
 
     }
 
-    /**
-     * @brief POST /boards/<name>
-     * @param inCommand
-     * @param i
-     */
-    void processBoardAdd(char **inCommand, int &i) {
+
+void ClientArgumentParser::processBoardAdd(char **inCommand, int &i) {
         i++;
         nullCheck(inCommand[i]);
         char *name = inCommand[i];
@@ -181,12 +121,8 @@ private:
 
     }
 
-    /**
-     * @brief
-     * @param inCommand
-     * @param i
-     */
-    void processItem(char **inCommand, int &i) {
+
+void ClientArgumentParser::processItem(char **inCommand, int &i) {
         i++;
         this->nullCheck(inCommand[i]);
         if (COMPARE(inCommand[i], "add")) {
@@ -200,25 +136,15 @@ private:
     }
 
 
-    /**
-     * @brief
-     * @param inCommand
-     * @param i
-     */
-    void processItemAdd(char **inCommand, int &i) {
+void ClientArgumentParser::processItemAdd(char **inCommand, int &i) {
         i++;
         this->nullCheck(inCommand[i]);
         this->processItemAddName(inCommand, i, inCommand[i]);
 
     }
 
-    /**
-     * @brief POST /board/<name> [content]
-     * @param inCommand
-     * @param i
-     * @param name
-     */
-    void processItemAddName(char **inCommand, int &i, char *name) {
+
+void ClientArgumentParser::processItemAddName(char **inCommand, int &i, char *name) {
         i++;
         this->nullCheck(inCommand[i]);
         this->content = inCommand[i];
@@ -231,25 +157,16 @@ private:
 
     }
 
-    /**
-     * @brief
-     * @param inCommand
-     * @param i
-     */
-    void processItemDelete(char **inCommand, int &i) {
+
+void ClientArgumentParser::processItemDelete(char **inCommand, int &i) {
         i++;
         this->nullCheck(inCommand[i]);
         this->processItemDeleteName(inCommand, i, inCommand[i]);
 
     }
 
-    /**
-     * @brief DELETE /board/<name>/<id>
-     * @param inCommand
-     * @param i
-     * @param name
-     */
-    void processItemDeleteName(char **inCommand, int &i, char *name) {
+
+void ClientArgumentParser::processItemDeleteName(char **inCommand, int &i, char *name) {
         i++;
         this->nullCheck(inCommand[i]);
         char *id = inCommand[i];
@@ -259,24 +176,14 @@ private:
 
     }
 
-    /**
-     * @brief
-     * @param inCommand
-     * @param i
-     */
-    void processItemUpdate(char **inCommand, int &i) {
+void ClientArgumentParser::processItemUpdate(char **inCommand, int &i) {
         i++;
         this->nullCheck(inCommand[i]);
         this->processItemUpdateName(inCommand, i, inCommand[i]);
     }
 
-    /**
-     * @brief
-     * @param inCommand
-     * @param i
-     * @param name
-     */
-    void processItemUpdateName(char **inCommand, int &i, char *name) {
+
+void ClientArgumentParser::processItemUpdateName(char **inCommand, int &i, char *name) {
         i++;
         this->nullCheck(inCommand[i]);
         // TODO CHECK NA INT id
@@ -285,14 +192,7 @@ private:
     }
 
 
-    /**
-     * @brief  PUT /board/<name>/<id> [content]
-     * @param inCommand
-     * @param i
-     * @param name
-     * @param id
-     */
-    void processItemUpdateName(char **inCommand, int &i, char *name, char *id) {
+void ClientArgumentParser::processItemUpdateName(char **inCommand, int &i, char *name, char *id) {
         i++;
         this->nullCheck(inCommand[i]);
         this->content = inCommand[i];
@@ -305,12 +205,8 @@ private:
     }
 
     // TODO
-    /**
-     * @brief
-     * @param inPort
-     * @param i
-     */
-    void parsePort(char **inPort, int &i) {
+
+void ClientArgumentParser::parsePort(char **inPort, int &i) {
         i++;
         if (inPort[i] == nullptr) { EXIT(WRONG_FORMAT)
         }
@@ -319,11 +215,7 @@ private:
     }
 
 
-    /**
-     * @brief
-     * @param inPort
-     */
-    void portToInteger(const char *inPort) {
+void ClientArgumentParser::portToInteger(const char *inPort) {
         string ports(inPort);
         for (char i : ports) {
             if (isdigit(i) == 0) { EXIT(UNKNOWN_PORT_FORMAT)
@@ -332,35 +224,31 @@ private:
         this->port = stoi(ports);
     }
 
-    /**
-     * @brief
-     */
-    void validatePortRange() {
+
+void ClientArgumentParser::validatePortRange() {
         if (this->port <= 0 || this->port > 65535) { EXIT(WRONG_PORT_RANGE)
         }
     }
 
 
     // TODO
-    void parseHost(char **inHost, int &i) {
+    void ClientArgumentParser::parseHost(char **inHost, int &i) {
         i++;
         this->nullCheck(inHost[i]);
         this->host = inHost[i];
     }
 
-    void nullCheck(const char *ptr) {
+void ClientArgumentParser::nullCheck(const char *ptr) {
         if (ptr == nullptr) { EXIT(60)
         }
     }
 
-    void isSetPort() {
+void ClientArgumentParser::isSetPort() {
         if (this->port == 0) { EXIT(UNKNOWN_PORT_FORMAT) // port neni nastaveny
         }
     }
 
-    void isSetHost() {
+void ClientArgumentParser::isSetHost() {
         if (this->host.empty()) { EXIT(UNKNOWN_OPTION) // bude jina chyba
         }
     }
-};
-

@@ -1,7 +1,7 @@
 //
 // Created by jakub on 01.10.19.
 //
-#include "client/ClientArgumentParser.cpp"
+#include "client/ClientArgumentParser.h"
 
 
 int main(int argc, char **argv) {

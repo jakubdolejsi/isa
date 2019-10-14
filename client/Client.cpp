@@ -3,15 +3,7 @@
 //
 
 
-
-#include <netinet/in.h>
-#include <netdb.h>
-#include <cstring>
-#include <string>
-#include <arpa/inet.h>
-#include <unistd.h>
-#include <iostream>
-#include <utility>
+#include "Client.h"
 
 #define SA struct sockaddr
 #define BUF_SIZE 4096
@@ -31,41 +23,29 @@
             exit(13);\
 
 
-using namespace std;
 
-class Client {
-
-private:
-    string request;
-    string host;
-    string content;
-    int port;
-    char *ip;
-
-public:
-    Client(string request, string host, int port, string content = "") {
+Client::Client(string request, string host, int port) {
         this->request = move(request);
         this->host = move(host);
         this->port = port;
-        this->content = move(content);
     }
 
     // ------------------------ DUMP METHODS------------------------------------------
-    string getRequest() {
+    string Client::getRequest() {
         return (this->request);
     }
 
-    string getHost() {
+string Client::getHost() {
         return (this->host);
     }
 
-    int getPort() {
+int Client::getPort() {
         return (this->port);
     }
 // -----------------------------------------------------------------------------------
 
 
-    char *setIpByHost() {
+char *Client::setIpByHost() {
         hostent *adr;
         char *ip = nullptr;
         struct in_addr **adressList;
@@ -80,7 +60,7 @@ public:
         return (this->ip);
     }
 
-    void connectToServer() {
+void Client::connectToServer() {
         string data;
         int sockfd = this->createSocket();
 
@@ -100,9 +80,7 @@ public:
     }
 
 
-private:
-
-    string Recv(int sockfd) {
+string Client::Recv(int sockfd) {
         char buf[BUF_SIZE];
         bzero(buf, BUF_SIZE);
         string data;
@@ -123,11 +101,11 @@ private:
         return (buf);
     }
 
-    void sendRequest(int sockfd, char *body) {
+void Client::sendRequest(int sockfd, char *body) {
         send(sockfd, body, strlen(body), 0);
     }
 
-    sockaddr_in fillStruct() {
+sockaddr_in Client::fillStruct() {
         struct sockaddr_in serverAddr;
 
         bzero(&serverAddr, sizeof(serverAddr));
@@ -138,19 +116,17 @@ private:
         return (serverAddr);
     }
 
-    int createSocket() {
+int Client::createSocket() {
         int sockfd;
         if ((sockfd = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
             SOCKET_ERR("Creating socket error", CREATE_SOCK_ERR)
         }
-//        setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &option, sizeof(option));
         return (sockfd);
     }
 
-    void Connect(int sockfd, sockaddr_in serverAddr) {
+void Client::Connect(int sockfd, sockaddr_in serverAddr) {
         int conn = connect(sockfd, (SA *) &serverAddr, sizeof(serverAddr));
         if (conn < 0) {
             SOCKET_ERR("Connection error", CONNECT_SOCK_ERR)
         }
     }
-};
