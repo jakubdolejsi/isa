@@ -2,21 +2,12 @@
 // Created by jakub on 01.10.19.
 //
 
-#ifndef MAIN_SERVERARGUMENTPARSER_H
-#define MAIN_SERVERARGUMENTPARSER_H
 
-#endif //MAIN_SERVERARGUMENTPARSER_H
 
-#include <cstdlib>
-#include <string>
-#include <iostream>
-#include <algorithm>
-#include <cstring>
 #include "../error/Error.h"
-#include "Server.h"
+#include "Server.cpp"
 
 using namespace std;
-
 
 
 #define PRINT_HELP\

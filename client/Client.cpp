@@ -2,10 +2,7 @@
 // Created by jakub on 02.10.19.
 //
 
-#ifndef ISA_REQUEST_H
-#define ISA_REQUEST_H
 
-#endif //ISA_REQUEST_H
 
 #include <netinet/in.h>
 #include <netdb.h>
@@ -14,6 +11,7 @@
 #include <arpa/inet.h>
 #include <unistd.h>
 #include <iostream>
+#include <utility>
 
 #define SA struct sockaddr
 #define BUF_SIZE 4096
@@ -23,8 +21,8 @@
 #define RECV_SOCK_ERR "An error occured when recieving data from server\n"
 
 #define DUMP_REQUEST(C)\
-            cout << " Sending request on " << C.getHost() << " on port "<< C.getPort() << " and IP: "<< C.setIpByHost() << " ..." << endl;\
-            cout << " Request: " <<C.getRequest() <<endl;
+            cout << " Sending request on " << (C).getHost() << " on port "<< (C).getPort() << " and IP: "<< (C).setIpByHost() << " ..." << endl;\
+            cout << " Request: " <<(C).getRequest() <<endl;
 
 
 #define SOCKET_ERR(P_TEXT, M_TEXT)\
@@ -46,10 +44,10 @@ private:
 
 public:
     Client(string request, string host, int port, string content = "") {
-        this->request = request;
-        this->host = host;
+        this->request = move(request);
+        this->host = move(host);
         this->port = port;
-        this->content = content;
+        this->content = move(content);
     }
 
     // ------------------------ DUMP METHODS------------------------------------------
@@ -109,8 +107,8 @@ private:
         bzero(buf, BUF_SIZE);
         string data;
         int rc;
-        while((rc = recv(sockfd, buf, BUF_SIZE, 0)) > 0) {
-            if(rc < 0) {
+        while ((rc = recv(sockfd, buf, BUF_SIZE, 0)) > 0) {
+            if (rc < 0) {
                 SOCKET_ERR("Reciev err", "An error occured while recieving data")
             }
             data += buf;
@@ -124,6 +122,7 @@ private:
 //        }
         return (buf);
     }
+
     void sendRequest(int sockfd, char *body) {
         send(sockfd, body, strlen(body), 0);
     }

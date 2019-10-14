@@ -5,19 +5,9 @@
 #include <cstdio>
 #include <cstdlib>
 #include <string>
-#include <sstream>
-#include "Data.h"
 #include <regex>
+#include <utility>
 
-#ifndef ISA_REQUESTPARSER_H
-#define ISA_REQUESTPARSER_H
-#endif //ISA_REQUESTPARSER_H
-
-#define GET_LEN 3
-#define POST_LEN 4
-#define PUT_LEN 3
-#define DELETE_LEN 6
-#define START_POS 0
 #define GET "GET"
 #define POST "POST"
 #define PUT "PUT"
@@ -32,23 +22,27 @@ using namespace std;
 class RequestParser {
 
 private:
+    /**
+     * @brief request
+     */
     string request;
 
 public:
-    RequestParser(string request) {
-        this->request = request;
+    explicit RequestParser(string request) {
+        this->request = move(request);
     }
 
-    vector<string>  process() {
+    /**
+     * @brief Dle metody dotoazu zavola prislusnou metodu na parsovani dotazu
+     * @return
+     */
+    vector<string> process() {
         vector<string> response;
         char *method;
         char buf[this->request.size() + 1];
         strcpy(buf, this->request.c_str());
 
         method = strtok(buf, " ");
-//        cout << "------------------" << endl;
-//        cout << method<< endl;
-//        cout << "------------------" << endl;
         if (COMPARE(method, GET)) {
             response = this->processGET();
         } else if (COMPARE(method, POST)) {
@@ -68,29 +62,28 @@ public:
 private:
 
 
-    vector<string>  processGET() {
+    vector<string> processGET() {
         return (this->parseHeader(this->request, false));
     }
 
-    vector<string>  processPOST() {
+    vector<string> processPOST() {
         return (this->parseHeader(this->request, true));
     }
 
-    vector<string>  processPUT() {
+    vector<string> processPUT() {
         return (this->parseHeader(this->request, true));
     }
 
-    vector<string>  processDELETE() {
-        return (this->parseHeader(this->request, true));
+    vector<string> processDELETE() {
+        return (this->parseHeader(this->request, false));
     }
 
 
-    vector<string> parseHeader(string inRequest, bool content) {
-        size_t position = inRequest.find('\n');
+    vector<string> parseHeader(const string &inRequest, bool content) {
+        vector<string> arr;
         string parsedRequest;
-        string lines = inRequest.substr(0, position);
-        size_t httpPosition = lines.find("HTTP/1.1");
-        vector< string > arr;
+        size_t position = inRequest.find('\n');
+        size_t httpPosition = inRequest.substr(0, position).find("HTTP/1.1");
         if (httpPosition == -1) {
             //spatna verze http
             exit(20);
@@ -104,11 +97,10 @@ private:
         if (content) {
             arr.push_back(this->searchForContent(inRequest));
         }
-
         return (arr);
     }
 
-    vector<string > toArray(string s, vector <string> arr) {
+    vector<string> toArray(string s, vector<string> arr) {
 
         replace(s.begin(), s.end(), '/', ' ');
         istringstream iss(s);
@@ -122,26 +114,7 @@ private:
     }
 
 
-    unsigned countWords(string str) {
-        char char_array[str.length() + 1];
-        strcpy(char_array, str.c_str());
-        char *arr = char_array;
-
-        int state = 0;
-        unsigned wc = 0; // word count
-        while (*arr) {
-            if (*arr == ' ' || *arr == '\n' || *arr == '\t') {
-                state = 0;
-            } else if (state == 0) {
-                state = 1;
-                ++wc;
-            }
-            ++arr;
-        }
-        return wc;
-    }
-
-    string searchForContent(string inRequest) {
+    string searchForContent(const string &inRequest) {
         string line;
         istringstream stream(inRequest);
         bool cLength = false;
@@ -172,7 +145,7 @@ private:
     string last(string s) {
         int fin = strlen(s.c_str());
         int len = 0;
-        string x = "";
+        string x;
         for (int i = fin; i > 0; i--) {
             if (s[i] == '\n' && s[i - 1] == '\r' && s[i - 2] == '\n' && s[i - 3] == '\r') {
                 len = i;
@@ -182,7 +155,7 @@ private:
         return (s.substr(len));
     }
 
-    bool checkIfHostIsPresent(string lines) {
+    bool checkIfHostIsPresent(const string &lines) {
         string line;
         istringstream stream(lines);
         bool found = false;
@@ -194,6 +167,5 @@ private:
         }
         return found;
     }
-
 
 };

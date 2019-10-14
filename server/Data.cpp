@@ -2,14 +2,10 @@
 // Created by jakub on 07.10.19.
 //
 
-#include <string>
-#include <vector>
-#include <iostream>
-#include <regex>
-#include "VectorMapper.h"
 
-#ifndef ISA_DATA_H
-#define ISA_DATA_H
+#include <regex>
+#include <utility>
+#include "VectorMapper.cpp"
 
 #define DUPLICATE "409"
 #define NO_DATA "404"
@@ -23,16 +19,30 @@
 
 using namespace std;
 
+/**
+ * @brief Objekt, ktery se stara a zpraovani dat requestu
+ */
 class Data {
 
 
 private:
+    /**
+     * @brief Vektor vektoru stringu, ktery uchovava informace o nastenkach
+     */
     vector<vector<string>> boards;
 
 public:
+    /**
+     * @brief Vektor mapper starajici se o serializace / deserializace nastenek
+     */
     VectorMapper vectorMapper;
 
 
+    /**
+     * @brief Zpracuje data requestu
+     * @param data Vstupni vektor dat, ktery mu preda object RequestParser
+     * @return Vraci zpracovana http data
+     */
     string process(vector<string> data) {
         string result;
         string method = data[0];
@@ -48,9 +58,19 @@ public:
         return (result);
     }
 
+
+    /**
+     * @brief Nastavi vektor boards dle parametru
+     * @param boards vektor boardu
+     */
     void setBoards(vector<vector<string>> boards) {
-        this->boards = boards;
+        this->boards = move(boards);
     }
+
+    /**
+     * @brief Ziska vektor boards
+     * @return
+     */
     vector<vector<string>> getBoards() {
         return this->boards;
     }
@@ -58,44 +78,47 @@ public:
 private:
 
 
-
+    /**
+     * @brief Zpracuje GET request
+     * @param params vektor parametru
+     * @return Vraci hhtp odpoved dle validity dotazu
+     */
     string processGET(vector<string> params) {
         string res;
 
         if (params[1] == "boards") {
             res = this->getAllBoards();
-            if (res.empty()) {
-                return this->queryFailed(NO_DATA);
-            }
         } else {
             res = this->getBoardByName(this->convertName(params[2]));
-            if (res.empty()) {
-                return this->queryFailed(NO_DATA);
-            }
         }
-        return querySucess(G_P_D_OK, res);
+        return (!res.empty() ? this->querySucess(G_P_D_OK, res) : this->queryFailed(NO_DATA));
     }
 
+    /**
+     * @brief Zpracuje POST request
+     * @param params vektor parametru
+     * @return Vraci hhtp odpoved dle validity dotazu
+     */
     string processPOST(vector<string> params) {
         string firstParam = params[1]; // boards || board
         string name = params[2]; // <name>
-        string res;
+        bool res;
 
         if (firstParam == "boards") { // vtvori novou prazdnou nastenku s nazvem <name>
             res = this->createNewBoard(this->convertName(name));
-            if (res.empty()) {
-                return this->queryFailed(DUPLICATE);
-            }
+            return (res ? this->querySucess(POST_OK) : this->queryFailed(DUPLICATE));
+
         } else {
             res = this->insertNewTopic(this->convertName(name), params[3]);
-            if(res.empty()) {
-                return this->queryFailed(NO_DATA);
-            }
+            return (res ? this->querySucess(POST_OK) : this->queryFailed(NO_DATA));
         }
-        return this->querySucess(POST_OK);
     }
 
-
+/**
+ * @brief Zpracuje PUT request
+ * @param params vektor parametru
+ * @return Vraci hhtp odpoved dle validity dotazu
+ */
     string processPUT(vector<string> params) {
         bool res;
         res = this->updateTopicById(this->convertName(params[2]), params[3], params[4]);
@@ -103,10 +126,15 @@ private:
         return (res ? this->querySucess(G_P_D_OK) : this->queryFailed(NO_DATA));
     }
 
+    /**
+     * @brief Zpracuje DELETE request
+     * @param params vektor parametru
+     * @return Vraci hhtp odpoved dle validity dotazu
+     */
     string processDELETE(vector<string> params) {
         bool res;
         string boardName = params[2];
-        if(params[1] == "board") {
+        if (params[1] == "board") {
             string id = params[3];
             res = this->deleteTopicByID(this->convertName(boardName), id);
         } else {
@@ -115,57 +143,67 @@ private:
         return (res ? this->querySucess(G_P_D_OK) : this->queryFailed(NO_DATA));
     }
 
-    string querySucess(const string &code, string data = "") {
+    /**
+     * @brief Vrati http hlavicku OK dotazu
+     * @param code Kod http hlavicky validniho dotazu
+     * @param data volitelny parametr, pokud budeme chtit krom hlavicky poslat i data
+     * @return vrati http odpoved
+     */
+    string querySucess(const string &code, const string &data = "") {
         string header = string("HTTP/1.1 ").append(code).append(" OK\r\n\r\n").append(data);
         return header;
     }
+
+    /**
+     * @brief Vrati http hlavicku NOK dotazu
+     * @param code Kod hlavicky chybneho dotazu
+     * @return vrati http odpoved
+     */
     string queryFailed(const string &code) {
         string header = string("HTTP/1.1 ").append(code).append(" NOK\r\n\r\n");
         return header;
     }
 
     /**
- * @brief
- * @param vec
- * @param item
- */
-    bool checkDuplicity(vector<string> item) {
-        return !(std::find(this->boards.begin(), this->boards.end(), item) != this->boards.end());
+     * @brief Overi duplicitu nastenky
+     * @param item hledany item
+     * @return true pokud je duplicita, false pokud je zaznam unikatni ??
+     */
+    bool checkDuplicity(const vector<string> &item) {
+        return !(find(this->boards.begin(), this->boards.end(), item) != this->boards.end());
     }
 
-/**
- * @brief POST /boards/<name>
- * @param boards
- * @param name
- * @return
- */
-    string createNewBoard(string boardName) {
+    /**
+     * @brief Vytvori novou nastenku
+     * @param boardName nazev vytvarene nastenky
+     * @return true pokud vytvareni probehlo v poradku, jinak false
+     */
+    bool createNewBoard(const string &boardName) {
 
         vector<string> cont;
         cont.push_back(boardName);
         bool ok = checkDuplicity(cont);
         if (!ok) {
-            return "";
+            return false;
         }
         this->boards.push_back(cont);
 
-        return "OK";
+        return true;
     }
 
 /**
  * @brief POST /board/<name>
- * @param boards
  * @param boardName
  * @param content
  * @return
  */
-    string insertNewTopic(const string &boardName, string &content) {
+    bool insertNewTopic(const string &boardName, string &content) {
 
-        content.erase(std::remove(content.begin(), content.end(), '\n'), content.end());
+        content.erase(remove(content.begin(), content.end(), '\n'), content.end());
         vector<string> cont;
         cont.push_back(boardName);
-        if(this->checkDuplicity(cont)) {
-            return "";
+        if (this->checkDuplicity(cont)) {
+            return false;
         }
         static int counter;
         string x;
@@ -176,13 +214,13 @@ private:
                 counter++;
             }
         }
-        return "OK";
+        return true;
     }
 
 /**
  * @brief DELETE /boards/<name>
- * @param boards
  * @param boardName
+ * @return
  */
     bool deleteBoardByName(const string &boardName) {
         bool found = false;
@@ -197,11 +235,6 @@ private:
         return found;
     }
 
-    void deleteTopics(vector<string> &board) {
-        for (vector<int>::size_type i = 0; i != boards.size(); i++) {
-            board[i].erase(board[i].begin() + i);
-        }
-    }
 
 /**
  * @brief Zmeni poradi nasledujicich prvku po akutalnim mazanem
@@ -213,15 +246,15 @@ private:
         string newTopicNumber = to_string(index).append(". ");
         for (vector<int>::size_type i = index; i != board.size(); i++) {
             oldTopicNumber = board[i].substr(0, 3);
-            board[i] = std::regex_replace(board[i], std::regex(oldTopicNumber), newTopicNumber);
+            board[i] = regex_replace(board[i], regex(oldTopicNumber), newTopicNumber);
         }
     }
 
 /**
  * @brief DELETE /board/<name>/<id>
- * @param boards
  * @param boardName
  * @param id
+ * @return
  */
     bool deleteTopicByID(const string &boardName, const string &id) {
         int index = atoi(id.c_str());
@@ -250,15 +283,13 @@ private:
 
 /**
  * @brief GET /board/<name>
- * @param boards
  * @param boardName
  * @return
  */
-    string getBoardByName(string boardName) {
+    string getBoardByName(const string &boardName) {
         for (vector<int>::size_type i = 0; i != this->boards.size(); i++) {
             if (this->boards[i][0] == boardName) {
-                return getTopics(i);
-//            return boards[i][0];
+                return this->getTopics(i);
             }
         }
         return "";
@@ -266,7 +297,6 @@ private:
 
 /**
  * @brief GET /boards
- * @param boards
  * @return
  */
     string getAllBoards() {
@@ -284,12 +314,12 @@ private:
  * @param content
  * @return
  */
-    bool update(vector<string> &board, string id, string content) {
+    bool update(vector<string> &board, const string &id, string content) {
         size_t pos;
         for (vector<int>::size_type i = 0; i != board.size(); i++) {
             pos = board[i].find('.');
             if (board[i].substr(0, pos) == id) { // pokud je cislo pred teckou shodne s zadanym ID
-                content.erase(std::remove(content.begin(), content.end(), '\n'), content.end()); // odstraneni eol
+                content.erase(remove(content.begin(), content.end(), '\n'), content.end()); // odstraneni eol
                 pos += 2; // nastaveni position na mezeru na ideckem a teckou
                 board[i].replace(pos, string::npos, content);
                 return true;
@@ -300,13 +330,12 @@ private:
 
 /**
  * @brief PUT /board/<name>/<id>
- * @param boards
  * @param boardName
  * @param id
  * @param content
  * @return
  */
-    bool updateTopicById(string boardName, string id, string content) {
+    bool updateTopicById(const string &boardName, const string &id, const string &content) {
         bool found = false;
         for (vector<int>::size_type i = 0; i != this->boards.size(); i++) {
             if (this->boards[i][0] == boardName && this->boards[i].size() >= atoi(id.c_str())) {
@@ -316,10 +345,14 @@ private:
         return found;
     }
 
+    /**
+     * @brief Prida hranate zavorky pred a za nazev boardu
+     * @param name
+     * @return
+     */
     string convertName(string name) {
         return name.insert(0, "[").append("]");
     }
 };
 
 
-#endif //ISA_DATA_H

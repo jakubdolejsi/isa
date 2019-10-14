@@ -2,16 +2,16 @@
 // Created by jakub on 08.10.19.
 //
 
-#ifndef ISA_VECTORMAPPER_H
-#define ISA_VECTORMAPPER_H
+#ifndef ISA_VECTORMAPPER_CPP
+#define ISA_VECTORMAPPER_CPP
 
-#include <string>
+
 #include <vector>
-#include <iostream>
+#include <sstream>
 
 using namespace std;
 
-class VectorMapper{
+class VectorMapper {
 
 
 public:
@@ -33,12 +33,11 @@ public:
         istringstream iss(sharedMemoryData);
         string line;
 
-        if(first) {
+        if (first) {
             boards = boards;
             first = false;
         }
-
-        while (std::getline(iss, line)) {
+        while (getline(iss, line)) {
             if (line == ":") {
                 boards.push_back(topic);
                 topic.clear();
@@ -46,13 +45,12 @@ public:
                 topic.push_back(line);
             }
         }
-        if(!topic.empty()) {
+        if (!topic.empty()) {
             boards.push_back(topic);
             topic.clear();
         }
         return boards;
     }
-
 };
 
-#endif //ISA_VECTORMAPPER_H
+#endif //ISA_VECTORMAPPER_CPP

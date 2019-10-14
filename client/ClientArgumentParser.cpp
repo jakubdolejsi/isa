@@ -2,16 +2,11 @@
 // Created by jakub on 01.10.19.
 //
 
-#ifndef MAIN_CLIENTARGUMENTPARSER_H
-#define MAIN_CLIENTARGUMENTPARSER_H
 
-#endif //MAIN_CLIENTARGUMENTPARSER_H
 
 #include <cstring>
 #include "../error/Error.h"
-#include "Client.h"
-
-
+#include "Client.cpp"
 
 
 #define COMPARE(X, Y)\
@@ -58,11 +53,9 @@ public:
         this->isSetHost();
     }
 
-    Client createClient()
-    {
+    Client createClient() {
         return Client(this->request, this->host, this->port, this->content);
     }
-
 
 
 private:
@@ -72,8 +65,7 @@ private:
      * @return
      */
     int validateArgumentCount() {
-        if (this->argc < 6) {
-            EXIT(ARGUMENT_COUNT_ERROR)
+        if (this->argc < 6) { EXIT(ARGUMENT_COUNT_ERROR)
         }
         return this->argc;
     }
@@ -136,7 +128,8 @@ private:
         i++;
         nullCheck(inCommand[i]);
         char *name = inCommand[i];
-        this->request = string("GET /board/").append(name).append(" HTTP/1.1\r\nHost: ").append(this->host).append("\r\n\r\n");
+        this->request = string("GET /board/").append(name).append(" HTTP/1.1\r\nHost: ").append(this->host).append(
+                "\r\n\r\n");
 
     }
 
@@ -152,7 +145,7 @@ private:
             this->processBoardAdd(inCommand, i);
         } else if (COMPARE(inCommand[i], "delete")) { //  board/delete
             this->processBoardDelete(inCommand, i);
-        } else if(COMPARE(inCommand[i], "list")) {
+        } else if (COMPARE(inCommand[i], "list")) {
             this->processBoardsList(inCommand, i);
         } else {
             cout << "neznamy prikaz na request" << endl;
@@ -169,7 +162,8 @@ private:
         i++;
         nullCheck(inCommand[i]);
         char *name = inCommand[i];
-        this->request = string("DELETE /boards/").append(name).append(" HTTP/1.1\r\nHost: ").append(this->host).append("\r\n\r\n");
+        this->request = string("DELETE /boards/").append(name).append(" HTTP/1.1\r\nHost: ").append(this->host).append(
+                "\r\n\r\n");
 
     }
 
@@ -182,7 +176,8 @@ private:
         i++;
         nullCheck(inCommand[i]);
         char *name = inCommand[i];
-        this->request = string("POST /boards/").append (name).append(" HTTP/1.1\r\nHost: ").append(this->host).append("\r\n\r\n");
+        this->request = string("POST /boards/").append(name).append(" HTTP/1.1\r\nHost: ").append(this->host).append(
+                "\r\n\r\n");
 
     }
 
@@ -228,8 +223,10 @@ private:
         this->nullCheck(inCommand[i]);
         this->content = inCommand[i];
 
-        string cont = string("Content-Type: text/plain\r\nContent-Length: ").append(to_string(strlen(this->content))).append("\r\n\r\n").append(this->content);
-        this->request = string("POST /board/").append(name).append(" HTTP/1.1\r\nHost: ").append(this->host).append("\r\n").append(cont);
+        string cont = string("Content-Type: text/plain\r\nContent-Length: ").append(
+                to_string(strlen(this->content))).append("\r\n\r\n").append(this->content);
+        this->request = string("POST /board/").append(name).append(" HTTP/1.1\r\nHost: ").append(this->host).append(
+                "\r\n").append(cont);
 
 
     }
@@ -256,7 +253,8 @@ private:
         i++;
         this->nullCheck(inCommand[i]);
         char *id = inCommand[i];
-        this->request = string("DELETE /board/").append(name).append("/").append(id).append(" HTTP/1.1\r\nHost: ").append(this->host).append("\r\n\r\n");
+        this->request = string("DELETE /board/").append(name).append("/").append(id).append(
+                " HTTP/1.1\r\nHost: ").append(this->host).append("\r\n\r\n");
         //TODO check na int ID
 
     }
@@ -298,8 +296,10 @@ private:
         i++;
         this->nullCheck(inCommand[i]);
         this->content = inCommand[i];
-        string cont = string("Content-Type: text/plain\r\nContent-Length: ").append(to_string(strlen(this->content))).append("\r\n\r\n").append(this->content);
-        this->request = string("PUT /board/").append(name).append("/").append(id).append("/ HTTP/1.1\r\nHost: ").append(this->host).append("\r\n").append(cont);
+        string cont = string("Content-Type: text/plain\r\nContent-Length: ").append(
+                to_string(strlen(this->content))).append("\r\n\r\n").append(this->content);
+        this->request = string("PUT /board/").append(name).append("/").append(id).append("/ HTTP/1.1\r\nHost: ").append(
+                this->host).append("\r\n").append(cont);
 
 
     }
@@ -312,8 +312,7 @@ private:
      */
     void parsePort(char **inPort, int &i) {
         i++;
-        if (inPort[i] == nullptr) {
-            EXIT(WRONG_FORMAT)
+        if (inPort[i] == nullptr) { EXIT(WRONG_FORMAT)
         }
         portToInteger(inPort[i]);
         validatePortRange();
@@ -327,8 +326,7 @@ private:
     void portToInteger(const char *inPort) {
         string ports(inPort);
         for (char i : ports) {
-            if (isdigit(i) == 0) {
-                EXIT(UNKNOWN_PORT_FORMAT)
+            if (isdigit(i) == 0) { EXIT(UNKNOWN_PORT_FORMAT)
             }
         }
         this->port = stoi(ports);
@@ -338,8 +336,7 @@ private:
      * @brief
      */
     void validatePortRange() {
-        if (this->port <= 0 || this->port > 65535) {
-            EXIT(WRONG_PORT_RANGE)
+        if (this->port <= 0 || this->port > 65535) { EXIT(WRONG_PORT_RANGE)
         }
     }
 
@@ -352,20 +349,17 @@ private:
     }
 
     void nullCheck(const char *ptr) {
-        if (ptr == nullptr) {
-            EXIT(60)
+        if (ptr == nullptr) { EXIT(60)
         }
     }
 
     void isSetPort() {
-        if(this->port == 0) {
-            EXIT(UNKNOWN_PORT_FORMAT) // port neni nastaveny
+        if (this->port == 0) { EXIT(UNKNOWN_PORT_FORMAT) // port neni nastaveny
         }
     }
 
     void isSetHost() {
-        if(this->host == "") {
-            EXIT(UNKNOWN_OPTION); // bude jina chyba
+        if (this->host.empty()) { EXIT(UNKNOWN_OPTION) // bude jina chyba
         }
     }
 };

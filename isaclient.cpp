@@ -1,11 +1,10 @@
 //
 // Created by jakub on 01.10.19.
 //
-#include "client/ClientArgumentParser.h"
+#include "client/ClientArgumentParser.cpp"
 
 
 int main(int argc, char **argv) {
-
 
 
     ClientArgumentParser clientArgumentParser = ClientArgumentParser(argc, argv);

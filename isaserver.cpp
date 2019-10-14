@@ -1,12 +1,9 @@
-#include "server/ServerArgumentParser.h"
 
-
-using namespace std;
+#include "server/ServerArgumentParser.cpp"
 
 int main(int argc, char **argv) {
 
-
-    ServerArgumentParser serverArgumentParser =  ServerArgumentParser();
+    ServerArgumentParser serverArgumentParser = ServerArgumentParser();
 //    serverArgumentParser.parse();
 
 
