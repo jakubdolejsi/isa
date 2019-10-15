@@ -92,7 +92,12 @@ string Data::processDELETE(vector<string> params) {
 
 
 string Data::querySucess(const string &code, const string &data) {
-    string header = string("HTTP/1.1 ").append(code).append(" OK\r\n\r\n").append(data);
+    string contentMetaData = "\r\n\r\n";
+    if (!data.empty()) {
+        contentMetaData = string("\r\nContent-Type: text/plain\r\n").append("Content-Length: ").append(
+                to_string(data.length())).append(contentMetaData);
+    }
+    string header = string("HTTP/1.1 ").append(code).append(" OK").append(contentMetaData).append(data);
     return header;
 }
 
@@ -127,33 +132,31 @@ bool Data::insertNewTopic(const string &boardName, string &content) {
     content.erase(remove(content.begin(), content.end(), '\n'), content.end());
     vector<string> cont;
     cont.push_back(boardName);
-    if (this->checkDuplicity(cont)) {
+    if (!this->checkDuplicity(cont)) {
         return false;
     }
-    static int counter;
-    string x;
+    static int vecSize;
     for (vector<int>::size_type i = 0; i != this->boards.size(); i++) {
         if (this->boards[i][0] == boardName) {
-            counter = boards[i].size();
-            this->boards[i].push_back((to_string(counter)).append(". ").append(content)); // vlozi prispevek
-            counter++;
+            vecSize = boards[i].size();
+            this->boards[i].push_back((to_string(vecSize)).append(". ").append(content)); // vlozi prispevek
+            return true;
         }
     }
-    return true;
+    return false;
 }
 
 
 bool Data::deleteBoardByName(const string &boardName) {
-    bool found = false;
     for (vector<int>::size_type i = 0; i != this->boards.size(); i++) {
         if (this->boards[i][0] == boardName) {
-            found = true;
             this->boards.erase(this->boards.begin() + i);
+            return true;
 //                this->boards[i].clear();
 //                this->boards[i].erase(this->boards[i].begin(), this->boards[i].end());
         }
     }
-    return found;
+    return false;
 }
 
 
@@ -170,8 +173,11 @@ void Data::reformateTopics(vector<string> &board, int index) {
 bool Data::deleteTopicByID(const string &boardName, const string &id) {
     int index = atoi(id.c_str());
     bool found = false;
+    if (index <= 0) {
+        return found;
+    }
     for (vector<int>::size_type i = 0; i != this->boards.size(); i++) {
-        if (this->boards[i][0] == boardName) {
+        if (this->boards[i][0] == boardName && this->boards[i].size() > index) {
             found = true;
             this->boards[i].erase(this->boards[i].begin() + index);
             reformateTopics(this->boards[i], index);

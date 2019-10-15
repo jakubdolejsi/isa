@@ -77,8 +77,6 @@ void Server::mainLoop() {
         close(acceptSockfd);
     }
     close(sockfd);
-//    cout << "dojeli jsme kamo" << endl;
-
 }
 
 
@@ -93,7 +91,6 @@ sockaddr_in Server::fillStructure() {
 }
 
 int Server::createSocket() {
-    int option = 1;
     int sockfd = socket(AF_INET, SOCK_STREAM, 0);
     if ((sockfd < 0)) {
         perror("socketError:");
@@ -177,8 +174,8 @@ string Server::Recv(int clientSock, int flag) {
     } else if (recData == 0) {
         this->endOfData(clientSock);
     }
-    string s(data);
-    return (s);
+//    string s(data);
+    return (string(data));
 }
 
 string Server::processClientData(vector<string> data) {
@@ -187,7 +184,7 @@ string Server::processClientData(vector<string> data) {
 
 void Server::endOfData(int sockfd) {
     close(sockfd);
-//    cout << "dojeli jsme kamo" << endl;
+    printf("Dojeli jsme kamo..\n");
     exit(0);
 }
 

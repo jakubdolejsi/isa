@@ -8,6 +8,7 @@
 
 #include <cstring>
 #include "Client.h"
+#include "../error/Error.h"
 
 using std::string;
 using std::to_string;

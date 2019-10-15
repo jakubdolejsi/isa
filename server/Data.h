@@ -135,15 +135,16 @@ private:
     bool deleteTopicByID(const string &boardName, const string &id);
 
 /**
- * @brief Ziska topiky boardu
- * @param boards
+ * @brief Ziska topiky boardu dle indexu
+ * @param j index boardu
+ * @return
  */
     string getTopics(int j);
 
 /**
  * @brief GET /board/<name>
  * @param boardName
- * @return
+ * @return Nalezene topiky
  */
     string getBoardByName(const string &boardName);
 
@@ -177,6 +178,7 @@ private:
      * @return
      */
     string convertName(string name);
+
 };
 
 #endif //ISA_DATA_H
