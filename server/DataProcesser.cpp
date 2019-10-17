@@ -4,7 +4,7 @@
 
 
 #include "../Helpers/VectorMapper.h"
-#include "Data.h"
+#include "DataProcesser.h"
 
 #define DUPLICATE "409"
 #define NO_DATA "404"
@@ -17,7 +17,7 @@
 
 
 
-string Data::process(vector<string> data) {
+string DataProcesser::process(vector<string> data) {
     string result;
     string method = data[0];
     if (method == "GET") {
@@ -33,16 +33,16 @@ string Data::process(vector<string> data) {
 }
 
 
-void Data::setBoards(vector<vector<string>> boards) {
+void DataProcesser::setBoards(vector<vector<string>> boards) {
     this->boards = move(boards);
 }
 
-vector<vector<string>> Data::getBoards() {
+vector<vector<string>> DataProcesser::getBoards() {
     return this->boards;
 }
 
 
-string Data::processGET(vector<string> params) {
+string DataProcesser::processGET(vector<string> params) {
     string res;
 
     if (params[1] == "boards") {
@@ -54,7 +54,7 @@ string Data::processGET(vector<string> params) {
 }
 
 
-string Data::processPOST(vector<string> params) {
+string DataProcesser::processPOST(vector<string> params) {
     string firstParam = params[1]; // boards || board
     string name = params[2]; // <name>
     bool res;
@@ -70,7 +70,7 @@ string Data::processPOST(vector<string> params) {
 }
 
 
-string Data::processPUT(vector<string> params) {
+string DataProcesser::processPUT(vector<string> params) {
     bool res;
     res = this->updateTopicById(this->convertName(params[2]), params[3], params[4]);
 
@@ -78,7 +78,7 @@ string Data::processPUT(vector<string> params) {
 }
 
 
-string Data::processDELETE(vector<string> params) {
+string DataProcesser::processDELETE(vector<string> params) {
     bool res;
     string boardName = params[2];
     if (params[1] == "board") {
@@ -91,7 +91,7 @@ string Data::processDELETE(vector<string> params) {
 }
 
 
-string Data::querySucess(const string &code, const string &data) {
+string DataProcesser::querySucess(const string &code, const string &data) {
     string contentMetaData = "\r\n\r\n";
     if (!data.empty()) {
         contentMetaData = string("\r\nContent-Type: text/plain\r\n").append("Content-Length: ").append(
@@ -102,18 +102,18 @@ string Data::querySucess(const string &code, const string &data) {
 }
 
 
-string Data::queryFailed(const string &code) {
+string DataProcesser::queryFailed(const string &code) {
     string header = string("HTTP/1.1 ").append(code).append(" NOK\r\n\r\n");
     return header;
 }
 
 
-bool Data::checkDuplicity(const vector<string> &item) {
+bool DataProcesser::checkDuplicity(const vector<string> &item) {
     return !(find(this->boards.begin(), this->boards.end(), item) != this->boards.end());
 }
 
 
-bool Data::createNewBoard(const string &boardName) {
+bool DataProcesser::createNewBoard(const string &boardName) {
 
     vector<string> cont;
     cont.push_back(boardName);
@@ -127,7 +127,7 @@ bool Data::createNewBoard(const string &boardName) {
 }
 
 
-bool Data::insertNewTopic(const string &boardName, string &content) {
+bool DataProcesser::insertNewTopic(const string &boardName, string &content) {
 
     content.erase(remove(content.begin(), content.end(), '\n'), content.end());
     vector<string> cont;
@@ -147,7 +147,7 @@ bool Data::insertNewTopic(const string &boardName, string &content) {
 }
 
 
-bool Data::deleteBoardByName(const string &boardName) {
+bool DataProcesser::deleteBoardByName(const string &boardName) {
     for (vector<int>::size_type i = 0; i != this->boards.size(); i++) {
         if (this->boards[i][0] == boardName) {
             this->boards.erase(this->boards.begin() + i);
@@ -160,7 +160,7 @@ bool Data::deleteBoardByName(const string &boardName) {
 }
 
 
-void Data::reformateTopics(vector<string> &board, int index) {
+void DataProcesser::reformateTopics(vector<string> &board, int index) {
     string oldTopicNumber;
     string newTopicNumber = to_string(index).append(". ");
     for (vector<int>::size_type i = index; i != board.size(); i++) {
@@ -170,7 +170,7 @@ void Data::reformateTopics(vector<string> &board, int index) {
 }
 
 
-bool Data::deleteTopicByID(const string &boardName, const string &id) {
+bool DataProcesser::deleteTopicByID(const string &boardName, const string &id) {
     int index = atoi(id.c_str());
     bool found = false;
     if (index <= 0) {
@@ -186,7 +186,7 @@ bool Data::deleteTopicByID(const string &boardName, const string &id) {
     return found;
 }
 
-string Data::getTopics(int j) {
+string DataProcesser::getTopics(int j) {
     string res;
     for (vector<int>::size_type i = 0; i != this->boards[j].size(); i++) {
         res.append(this->boards[j][i]).append("\n");
@@ -194,7 +194,7 @@ string Data::getTopics(int j) {
     return res;
 }
 
-string Data::getBoardByName(const string &boardName) {
+string DataProcesser::getBoardByName(const string &boardName) {
     for (vector<int>::size_type i = 0; i != this->boards.size(); i++) {
         if (this->boards[i][0] == boardName) {
             return this->getTopics(i);
@@ -204,7 +204,7 @@ string Data::getBoardByName(const string &boardName) {
 }
 
 
-string Data::getAllBoards() {
+string DataProcesser::getAllBoards() {
     string res;
     for (vector<int>::size_type i = 0; i != this->boards.size(); i++) {
         res.append(this->boards[i][0]).append("\n");
@@ -213,7 +213,7 @@ string Data::getAllBoards() {
 }
 
 
-bool Data::update(vector<string> &board, const string &id, string content) {
+bool DataProcesser::update(vector<string> &board, const string &id, string content) {
     size_t pos;
     for (vector<int>::size_type i = 0; i != board.size(); i++) {
         pos = board[i].find('.');
@@ -227,7 +227,7 @@ bool Data::update(vector<string> &board, const string &id, string content) {
     return false;
 }
 
-bool Data::updateTopicById(const string &boardName, const string &id, const string &content) {
+bool DataProcesser::updateTopicById(const string &boardName, const string &id, const string &content) {
     bool found = false;
     for (vector<int>::size_type i = 0; i != this->boards.size(); i++) {
         if (this->boards[i][0] == boardName && this->boards[i].size() >= atoi(id.c_str())) {
@@ -238,7 +238,7 @@ bool Data::updateTopicById(const string &boardName, const string &id, const stri
 }
 
 
-string Data::convertName(string name) {
+string DataProcesser::convertName(string name) {
     return name.insert(0, "[").append("]");
 }
 

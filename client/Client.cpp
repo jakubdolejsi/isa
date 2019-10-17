@@ -86,7 +86,7 @@ string Client::Recv(int sockfd) {
     int rc;
     while ((rc = recv(sockfd, buf, BUF_SIZE, 0)) > 0) {
         if (rc < 0) {
-            SOCKET_ERR("Reciev err", "An error occured while recieving data")
+            SOCKET_ERR("Reciev err", "An error occured while recieving dataProcesser")
         }
         data += buf;
         memset(buf, 0, BUF_SIZE);

@@ -22,7 +22,7 @@
 
 Server::Server(int port) {
     this->port = port;
-    this->data = Data();
+    this->dataProcesser = DataProcesser();
 }
 
 
@@ -35,7 +35,6 @@ void Server::mainLoop() {
     int segment_id;
     char *shared_memory;
     struct shmid_ds shmbuffer;
-    int segment_size;
     bool first = true;
 
 
@@ -58,9 +57,9 @@ void Server::mainLoop() {
         if (pid == 0) {
 
             mtx.lock();
-            this->data.setBoards(VectorMapper::deserialize(shared_memory, first));
+            this->dataProcesser.setBoards(VectorMapper::deserialize(shared_memory, first));
             dataToSend = this->processClientData(this->parseClientData(acceptSockfd));
-            dataToSharedMemory = VectorMapper::serialize(this->data.getBoards());
+            dataToSharedMemory = VectorMapper::serialize(this->dataProcesser.getBoards());
 
             char char_array[dataToSharedMemory.length() + 1];
             strcpy(char_array, dataToSharedMemory.c_str());
@@ -144,10 +143,10 @@ int *Server::createMutexSharedMemory(int &segment_id, struct shmid_ds &shmbuffer
     return (int *) shmat(segment_id, nullptr, 0);
 }
 
-vector<string> Server::parseClientData(int clientSock) {
+vector<string> Server::parseClientData(int acceptSockfd) {
     string recvData;
     vector<string> response;
-    recvData = this->Recv(clientSock, 0);
+    recvData = this->Recv(acceptSockfd);
 
     RequestParser requestParser = RequestParser(recvData);
     response = requestParser.process();
@@ -164,22 +163,22 @@ void Server::Send(int acceptSockfd, const string &data) {
 }
 
 
-string Server::Recv(int clientSock, int flag) {
+string Server::Recv(int clientSock) {
     char data[BUFF_SIZE];
     bzero(data, BUFF_SIZE);
-    int recData = recv(clientSock, data, BUFF_SIZE, flag);
+    int recData = recv(clientSock, data, BUFF_SIZE, 0);
 
     if (recData < 0) {
         SOCKET_ERR("Recv", "Recv error occured ")
     } else if (recData == 0) {
         this->endOfData(clientSock);
     }
-//    string s(data);
+//    string s(dataProcesser);
     return (string(data));
 }
 
 string Server::processClientData(vector<string> data) {
-    return (this->data.process(move(data)));
+    return (this->dataProcesser.process(move(data)));
 }
 
 void Server::endOfData(int sockfd) {

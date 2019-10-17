@@ -2,8 +2,8 @@
 // Created by jakub on 14.10.19.
 //
 
-#ifndef ISA_DATA_H
-#define ISA_DATA_H
+#ifndef ISA_DATAPROCESSER_H
+#define ISA_DATAPROCESSER_H
 
 #include <regex>
 #include <string>
@@ -15,7 +15,7 @@ using std::to_string;
 using std::regex;
 
 
-class Data {
+class DataProcesser {
 private:
     /**
      * @brief Vektor vektoru stringu, ktery uchovava informace o nastenkach
@@ -181,4 +181,4 @@ private:
 
 };
 
-#endif //ISA_DATA_H
+#endif //ISA_DATAPROCESSER_H
