@@ -72,7 +72,8 @@ void Server::mainLoop() {
             close(sockfd);
             exit(EXIT_SUCCESS);
         }
-        wait(nullptr);
+        waitpid(pid, nullptr, 0);
+//        wait(nullptr);
         close(acceptSockfd);
     }
     close(sockfd);
