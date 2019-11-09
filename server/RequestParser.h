@@ -5,14 +5,14 @@
 #ifndef ISA_REQUESTPARSER_H
 #define ISA_REQUESTPARSER_H
 
-#include <vector>
+#include <algorithm>
 #include <cstring>
 #include <sstream>
-#include <algorithm>
+#include <vector>
 
+using std::istringstream;
 using std::string;
 using std::vector;
-using std::istringstream;
 
 class RequestParser {
 
@@ -32,7 +32,6 @@ public:
     vector<string> process();
 
 private:
-
     /**
      * @brief Zpracuje GET request
      * @return
@@ -63,7 +62,7 @@ private:
      * @param content content requestu
      * @return
      */
-    vector<string> parseHeader(const string &inRequest, bool content);
+    vector<string> parseHeader(const string& inRequest, bool content);
 
     /**
      * @brief Prevede retezec na vektor
@@ -72,13 +71,12 @@ private:
      */
     vector<string> toArray(string s);
 
-
     /**
      * @brief Prohleda v http hlavicce content
      * @param inRequest
      * @return Nalezeny content
      */
-    string searchForContent(const string &inRequest);
+    string searchForContent(const string& inRequest);
 
     /**
      * @brief
@@ -89,11 +87,12 @@ private:
     string last(string s);
 
     /**
-     * @brief Zkontroluje, jestli http hlavicka obsahuje polozku Host, kterou verze HTTP1.1 obsahovat musi
+     * @brief Zkontroluje, jestli http hlavicka obsahuje polozku Host, kterou
+     * verze HTTP1.1 obsahovat musi
      * @param inRequest vstupni request
      * @return true pokud se nasla, jinak false
      */
-    bool checkIfHostIsPresent(const string &inRequest);
+    bool checkIfHostIsPresent(const string& inRequest);
 };
 
-#endif //ISA_REQUESTPARSER_H
+#endif // ISA_REQUESTPARSER_H

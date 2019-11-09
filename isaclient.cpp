@@ -3,9 +3,8 @@
 //
 #include "client/ClientArgumentParser.h"
 
-
-int main(int argc, char **argv) {
-
+int main(int argc, char** argv)
+{
 
     ClientArgumentParser clientArgumentParser = ClientArgumentParser(argc, argv);
     clientArgumentParser.parse();
@@ -14,7 +13,7 @@ int main(int argc, char **argv) {
     client.setIpByHost();
     client.connectToServer();
 
-//    DUMP_REQUEST(client)
+    //    DUMP_REQUEST(client)
 
-//    RETURN_OK
+    //    RETURN_OK
 }

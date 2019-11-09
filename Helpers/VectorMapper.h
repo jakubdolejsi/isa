@@ -5,15 +5,16 @@
 #ifndef ISA_VECTORMAPPER_H
 #define ISA_VECTORMAPPER_H
 
-#include <vector>
 #include <sstream>
+#include <vector>
 
+using std::istringstream;
 using std::string;
 using std::vector;
-using std::istringstream;
 
 /**
- * @brief Objekt, ktery se stara o serializaci vektoru boards to retezce charu a naopak
+ * @brief Objekt, ktery se stara o serializaci vektoru boards to retezce charu a
+ * naopak
  */
 class VectorMapper {
 
@@ -31,7 +32,8 @@ public:
      * @param first testing
      * @return vraci slozeny vektor boards
      */
-    static vector<vector<string>> deserialize(char *sharedMemoryData, bool &first);
+    static vector<vector<string>> deserialize(char* sharedMemoryData,
+            bool& first);
 };
 
-#endif //ISA_VECTORMAPPER_H
+#endif // ISA_VECTORMAPPER_H

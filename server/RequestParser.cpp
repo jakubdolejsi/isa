@@ -2,8 +2,6 @@
 // Created by jakub on 03.10.19.
 //
 
-
-
 #include "RequestParser.h"
 
 #define GET "GET"
@@ -11,30 +9,34 @@
 #define PUT "PUT"
 #define DELETE "DELETE"
 
-#define COMPARE(X, Y)\
-            (strncmp(X, Y, strlen(X)) == 0) ? true : false\
+#define COMPARE(X, Y) (strncmp(X, Y, strlen(X)) == 0) ? true : false
 
-
-RequestParser::RequestParser(string request) {
+RequestParser::RequestParser(string request)
+{
     this->request = move(request);
 }
 
-vector<string> RequestParser::process() {
+vector<string> RequestParser::process()
+{
     vector<string> response;
-    char *method;
-    char buf[this->request.size() + 1];
+    char* method;
+    char buf[this->request.size()+1];
     strcpy(buf, this->request.c_str());
 
     method = strtok(buf, " ");
     if (COMPARE(method, GET)) {
         response = processGET();
-    } else if (COMPARE(method, POST)) {
+    }
+    else if (COMPARE(method, POST)) {
         response = this->processPOST();
-    } else if (COMPARE(method, PUT)) {
+    }
+    else if (COMPARE(method, PUT)) {
         response = this->processPUT();
-    } else if (COMPARE(method, DELETE)) {
+    }
+    else if (COMPARE(method, DELETE)) {
         response = this->processDELETE();
-    } else {
+    }
+    else {
 
         exit(99);
         // TODO ERROR!
@@ -42,30 +44,35 @@ vector<string> RequestParser::process() {
     return (response);
 }
 
-vector<string> RequestParser::processGET() {
+vector<string> RequestParser::processGET()
+{
     return (this->parseHeader(this->request, false));
 }
 
-vector<string> RequestParser::processPOST() {
+vector<string> RequestParser::processPOST()
+{
     return (this->parseHeader(this->request, true));
 }
 
-vector<string> RequestParser::processPUT() {
+vector<string> RequestParser::processPUT()
+{
     return (this->parseHeader(this->request, true));
 }
 
-vector<string> RequestParser::processDELETE() {
+vector<string> RequestParser::processDELETE()
+{
     return (this->parseHeader(this->request, false));
 }
 
-
-vector<string> RequestParser::parseHeader(const string &inRequest, bool content) {
+vector<string> RequestParser::parseHeader(const string& inRequest,
+        bool content)
+{
     vector<string> arr;
     string parsedRequest;
     size_t position = inRequest.find('\n');
     size_t httpPosition = inRequest.substr(0, position).find("HTTP/1.1");
-    if (httpPosition == -1) {
-        //spatna verze http
+    if (httpPosition==-1) {
+        // spatna verze http
         exit(20);
     }
     parsedRequest = inRequest.substr(0, httpPosition);
@@ -80,7 +87,8 @@ vector<string> RequestParser::parseHeader(const string &inRequest, bool content)
     return (arr);
 }
 
-vector<string> RequestParser::toArray(string s) {
+vector<string> RequestParser::toArray(string s)
+{
     vector<string> arr;
     replace(s.begin(), s.end(), '/', ' ');
     istringstream iss(s);
@@ -93,8 +101,8 @@ vector<string> RequestParser::toArray(string s) {
     return (arr);
 }
 
-
-string RequestParser::searchForContent(const string &inRequest) {
+string RequestParser::searchForContent(const string& inRequest)
+{
     string line;
     istringstream stream(inRequest);
     bool cLength = false;
@@ -104,30 +112,31 @@ string RequestParser::searchForContent(const string &inRequest) {
     string last;
 
     while (getline(stream, line)) {
-        if (line.substr(0, 16) == "Content-Length: ") {
+        if (line.substr(0, 16)=="Content-Length: ") {
             cLength = true;
             contentLength = stoi(line.substr(16));
         }
-        if (line.substr(0, 14) == "Content-Type: ") {
+        if (line.substr(0, 14)=="Content-Type: ") {
             cType = true;
         }
     }
     if (cLength && cType) {
         last = this->last(inRequest);
-        if (contentLength == strlen(last.c_str()) - 1) {
+        if (contentLength==strlen(last.c_str())-1) {
             content.append(last);
         }
     }
     return (content);
 }
 
-
-string RequestParser::last(string s) {
+string RequestParser::last(string s)
+{
     int fin = strlen(s.c_str());
     int len = 0;
     string x;
-    for (int i = fin; i > 0; i--) {
-        if (s[i] == '\n' && s[i - 1] == '\r' && s[i - 2] == '\n' && s[i - 3] == '\r') {
+    for (int i = fin; i>0; i--) {
+        if (s[i]=='\n' && s[i-1]=='\r' && s[i-2]=='\n' &&
+                s[i-3]=='\r') {
             len = i;
             break;
         }
@@ -135,13 +144,14 @@ string RequestParser::last(string s) {
     return (s.substr(len));
 }
 
-bool RequestParser::checkIfHostIsPresent(const string &inRequest) {
+bool RequestParser::checkIfHostIsPresent(const string& inRequest)
+{
     string line;
     istringstream stream(inRequest);
     bool found = false;
 
     while (getline(stream, line)) {
-        if (line.substr(0, 4) == "Host") {
+        if (line.substr(0, 4)=="Host") {
             found = true;
         }
     }

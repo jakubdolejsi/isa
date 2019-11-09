@@ -5,14 +5,14 @@
 #ifndef ISA_SERVER_H
 #define ISA_SERVER_H
 
-#include <netinet/in.h>
+#include "DataProcesser.h"
 #include <mutex>
-#include <sys/stat.h>
+#include <netinet/in.h>
 #include <sys/ipc.h>
 #include <sys/shm.h>
-#include <unistd.h>
+#include <sys/stat.h>
 #include <sys/wait.h>
-#include "DataProcesser.h"
+#include <unistd.h>
 
 using std::mutex;
 
@@ -24,13 +24,12 @@ private:
      */
     int port;
     /**
-     * @brief dataProcesser objekt starajici se o zpracovani dat prijatych od klienta
+     * @brief dataProcesser objekt starajici se o zpracovani dat prijatych od
+     * klienta
      */
     DataProcesser dataProcesser;
 
-
 public:
-
     /**
      * @brief Konstruktor slouzici k inicializaci portu a objektu DataProcesser
      * @param port port predany objetekm ServerArgumentParser
@@ -43,7 +42,6 @@ public:
     void mainLoop();
 
 private:
-
     /**
      * @brief Naplni strukturu sockaddr_in potrebnymi daty(rodina adres, port...)
      * @return naplnena struktura
@@ -79,12 +77,13 @@ private:
 
     /**
      * @brief Vytvori sdilenou pamet pro uchovavani dat nastenky
-     * @param segment_id promenna uchovavajici informace o typu sdilene pameti(flagy, velikost)
+     * @param segment_id promenna uchovavajici informace o typu sdilene
+     * pameti(flagy, velikost)
      * @return Vrati char pripojeny k sdilene pameti
      */
-    char *createSharedMemory(int &segment_id);
+    char* createSharedMemory(int& segment_id);
 
-    int *createMutexSharedMemory(int &segment_id, struct shmid_ds &shmbuffer);
+    int* createMutexSharedMemory(int& segment_id, struct shmid_ds& shmbuffer);
 
     /**
      * @brief Provede parsing prijatych dat
@@ -98,7 +97,7 @@ private:
      * @param acceptSockfd klientsky socket
      * @param data data, ktera se maji odeslat
      */
-    void Send(int acceptSockfd, const string &data);
+    void Send(int acceptSockfd, const string& data);
 
     /**
      * @brief Prijme klientska data
@@ -115,7 +114,6 @@ private:
     string processClientData(vector<string> data);
 
     void endOfData(int sockfd);
-
 };
 
-#endif //ISA_SERVER_H
+#endif // ISA_SERVER_H

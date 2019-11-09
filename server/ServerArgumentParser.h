@@ -12,7 +12,7 @@ class ServerArgumentParser {
 
 private:
     int port{};
-    char **argv;
+    char** argv;
     int argc;
 
 public:
@@ -21,7 +21,7 @@ public:
      * @param argc pocet argumentu
      * @param argv pole argumentu
      */
-    ServerArgumentParser(int argc, char **argv);
+    ServerArgumentParser(int argc, char** argv);
 
     /**
      * @brief Provede hlavni parsovani argumentu
@@ -41,7 +41,6 @@ public:
     Server createServer();
 
 private:
-
     /**
      * @brief Prochazi pole argumentu a hleda option -p
      * @return
@@ -54,13 +53,13 @@ private:
      * @param option
      * @return
      */
-    int compareLength(char *optionP, char *option);
+    int compareLength(char* optionP, char* option);
 
     /**
      * @brief Overi, jestli je nastaveny port za flagem -p
      * @param inPort
      */
-    void validatePort(char *inPort);
+    void validatePort(char* inPort);
 
     /**
      * @brief  Overi rozsah portu
@@ -72,7 +71,6 @@ private:
      * @return pocet argumentu
      */
     int validateArgumentCount();
-
 };
 
-#endif //ISA_SERVERARGUMENTPARSER_H
+#endif // ISA_SERVERARGUMENTPARSER_H

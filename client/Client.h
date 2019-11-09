@@ -2,21 +2,20 @@
 // Created by jakub on 14.10.19.
 //
 
-
 #ifndef ISA_CLIENT_H
 #define ISA_CLIENT_H
 
-#include <netinet/in.h>
-#include <netdb.h>
+#include "../error/Error.h"
 #include <arpa/inet.h>
 #include <cstring>
-#include <unistd.h>
 #include <iostream>
-#include "../error/Error.h"
+#include <netdb.h>
+#include <netinet/in.h>
+#include <unistd.h>
 
-using std::string;
 using std::cout;
 using std::endl;
+using std::string;
 
 class Client {
 
@@ -25,30 +24,28 @@ private:
     string host;
     string content;
     int port;
-    char *ip;
+    char* ip;
 
 public:
     Client(string request, string host, int port);
 
-    // ------------------------ DUMP METHODS------------------------------------------
+    // ------------------------ DUMP
+    // METHODS------------------------------------------
     string getRequest();
 
     string getHost();
 
     int getPort();
-// -----------------------------------------------------------------------------------
+    // -----------------------------------------------------------------------------------
 
-
-    char *setIpByHost();
+    char* setIpByHost();
 
     void connectToServer();
 
-
 private:
-
     string Recv(int sockfd);
 
-    void sendRequest(int sockfd, char *body);
+    void sendRequest(int sockfd, char* body);
 
     sockaddr_in fillStruct();
 
@@ -57,4 +54,4 @@ private:
     void Connect(int sockfd, sockaddr_in serverAddr);
 };
 
-#endif //ISA_CLIENT_H
+#endif // ISA_CLIENT_H

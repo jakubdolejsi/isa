@@ -3,11 +3,11 @@
 //
 #include "VectorMapper.h"
 
-
-string VectorMapper::serialize(vector<vector<string>> boards) {
+string VectorMapper::serialize(vector<vector<string>> boards)
+{
     string out;
-    for (vector<int>::size_type i = 0; i != boards.size(); i++) {
-        for (vector<int>::size_type j = 0; j != boards[i].size(); j++) {
+    for (vector<int>::size_type i = 0; i!=boards.size(); i++) {
+        for (vector<int>::size_type j = 0; j!=boards[i].size(); j++) {
             out.append(boards[i][j]).append("\n");
         }
         out.append(":\n");
@@ -15,7 +15,9 @@ string VectorMapper::serialize(vector<vector<string>> boards) {
     return out;
 }
 
-vector<vector<string>> VectorMapper::deserialize(char *sharedMemoryData, bool &first) {
+vector<vector<string>> VectorMapper::deserialize(char* sharedMemoryData,
+        bool& first)
+{
     first = false;
     vector<vector<string>> boards;
     vector<string> topic;
@@ -27,10 +29,11 @@ vector<vector<string>> VectorMapper::deserialize(char *sharedMemoryData, bool &f
         first = false;
     }
     while (getline(iss, line)) {
-        if (line == ":") {
+        if (line==":") {
             boards.push_back(topic);
             topic.clear();
-        } else {
+        }
+        else {
             topic.push_back(line);
         }
     }
@@ -40,4 +43,3 @@ vector<vector<string>> VectorMapper::deserialize(char *sharedMemoryData, bool &f
     }
     return boards;
 }
-

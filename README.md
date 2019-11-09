@@ -57,9 +57,9 @@ Nyní spustíme klienta, který odešle request na daný port serveru (v našem 
 Následně do této nástěnky vloží příspěvěk "firstCommit".
 Nakonec si zobrazíme stav nástěnky "TestBoard".
 ```
-./isaclient -p 12345 board add TestBoard
-./isaclient -p 12345 board add TestBoard firstCommit
-./isaclient -p 12345 board list TestBoard
+./isaclient -H localhost -p 12345 board add TestBoard
+./isaclient -H localhost -p 12345 board add TestBoard firstCommit
+./isaclient -H localhost -p 12345 board list TestBoard
 ```
 Výstup by měl vypadat takto:
 ```

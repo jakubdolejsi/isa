@@ -5,15 +5,23 @@
 #ifndef ISA_DATAPROCESSER_H
 #define ISA_DATAPROCESSER_H
 
+#define DUPLICATE "409"
+#define NO_DATA "404"
+#define ZERO_LENGTH "400"
+#define POST_OK "201"
+#define G_P_D_OK "200"
+
+#define COMPARE(X, Y) (strncmp(X, Y, strlen(X)) == 0) ? true : false
+
+
 #include <regex>
 #include <string>
 #include <vector>
 
-using std::string;
-using std::vector;
-using std::to_string;
 using std::regex;
-
+using std::string;
+using std::to_string;
+using std::vector;
 
 class DataProcesser {
 private:
@@ -30,7 +38,6 @@ public:
      */
     string process(vector<string> data);
 
-
     /**
      * @brief Nastavi vektor boards dle parametru
      * @param boards vektor boardu
@@ -44,8 +51,6 @@ public:
     vector<vector<string>> getBoards();
 
 private:
-
-
     /**
      * @brief Zpracuje GET request
      * @param params vektor parametru
@@ -60,11 +65,11 @@ private:
      */
     string processPOST(vector<string> params);
 
-/**
- * @brief Zpracuje PUT request
- * @param params vektor parametru
- * @return Vraci hhtp odpoved dle validity dotazu
- */
+    /**
+     * @brief Zpracuje PUT request
+     * @param params vektor parametru
+     * @return Vraci hhtp odpoved dle validity dotazu
+     */
     string processPUT(vector<string> params);
 
     /**
@@ -77,100 +82,101 @@ private:
     /**
      * @brief Vrati http hlavicku OK dotazu
      * @param code Kod http hlavicky validniho dotazu
-     * @param data volitelny parametr, pokud budeme chtit krom hlavicky poslat i data
+     * @param data volitelny parametr, pokud budeme chtit krom hlavicky poslat i
+     * data
      * @return vrati http odpoved
      */
-    string querySucess(const string &code, const string &data = "");
+    string querySucess(const string& code, const string& data = "");
 
     /**
      * @brief Vrati http hlavicku NOK dotazu
      * @param code Kod hlavicky chybneho dotazu
      * @return vrati http odpoved
      */
-    string queryFailed(const string &code);
+    string queryFailed(const string& code);
 
     /**
      * @brief Overi duplicitu nastenky
      * @param item hledany item
      * @return true pokud je duplicita, false pokud je zaznam unikatni ??
      */
-    bool checkDuplicity(const vector<string> &item);
+    bool checkDuplicity(const vector<string>& item);
 
     /**
      * @brief Vytvori novou nastenku
      * @param boardName nazev vytvarene nastenky
      * @return true pokud vytvareni probehlo v poradku, jinak false
      */
-    bool createNewBoard(const string &boardName);
+    bool createNewBoard(const string& boardName);
 
-/**
- * @brief POST /board/<name>
- * @param boardName
- * @param content
- * @return
- */
-    bool insertNewTopic(const string &boardName, string &content);
+    /**
+     * @brief POST /board/<name>
+     * @param boardName
+     * @param content
+     * @return
+     */
+    bool insertNewTopic(const string& boardName, string& content);
 
-/**
- * @brief DELETE /boards/<name>
- * @param boardName
- * @return
- */
-    bool deleteBoardByName(const string &boardName);
+    /**
+     * @brief DELETE /boards/<name>
+     * @param boardName
+     * @return
+     */
+    bool deleteBoardByName(const string& boardName);
 
+    /**
+     * @brief Zmeni poradi nasledujicich prvku po akutalnim mazanem
+     * @param board
+     * @param index
+     */
+    void reformateTopics(vector<string>& board, int index);
 
-/**
- * @brief Zmeni poradi nasledujicich prvku po akutalnim mazanem
- * @param board
- * @param index
- */
-    void reformateTopics(vector<string> &board, int index);
+    /**
+     * @brief DELETE /board/<name>/<id>
+     * @param boardName
+     * @param id
+     * @return
+     */
+    bool deleteTopicByID(const string& boardName, const string& id);
 
-/**
- * @brief DELETE /board/<name>/<id>
- * @param boardName
- * @param id
- * @return
- */
-    bool deleteTopicByID(const string &boardName, const string &id);
-
-/**
- * @brief Ziska topiky boardu dle indexu
- * @param j index boardu
- * @return
- */
+    /**
+     * @brief Ziska topiky boardu dle indexu
+     * @param j index boardu
+     * @return
+     */
     string getTopics(int j);
 
-/**
- * @brief GET /board/<name>
- * @param boardName
- * @return Nalezene topiky
- */
-    string getBoardByName(const string &boardName);
+    /**
+     * @brief GET /board/<name>
+     * @param boardName
+     * @return Nalezene topiky
+     */
+    string getBoardByName(const string& boardName);
 
-/**
- * @brief GET /boards
- * @return
- */
+    /**
+     * @brief GET /boards
+     * @return
+     */
     string getAllBoards();
 
-/**
- * @brief Nahradi content aktualniho prispevku za novy
- * @param board
- * @param id
- * @param content
- * @return
- */
-    bool update(vector<string> &board, const string &id, string content);
+    /**
+     * @brief Nahradi content aktualniho prispevku za novy
+     * @param board
+     * @param id
+     * @param content
+     * @return
+     */
+    bool update(vector<string>& board, const string& id, string content);
 
-/**
- * @brief PUT /board/<name>/<id>
- * @param boardName
- * @param id
- * @param content
- * @return
- */
-    bool updateTopicById(const string &boardName, const string &id, const string &content);
+    /**
+     * @brief PUT /board/<name>/<id>
+     * @param boardName
+     * @param id
+     * @param content
+     * @return
+     */
+    bool updateTopicById(const string& boardName, const string& id,
+            const string& content);
 
     /**
      * @brief Prida hranate zavorky pred a za nazev boardu
@@ -178,7 +184,6 @@ private:
      * @return
      */
     string convertName(string name);
-
 };
 
-#endif //ISA_DATAPROCESSER_H
+#endif // ISA_DATAPROCESSER_H
