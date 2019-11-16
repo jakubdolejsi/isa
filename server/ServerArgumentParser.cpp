@@ -4,8 +4,6 @@
 
 #include "ServerArgumentParser.h"
 
-#define PRINT_HELP printf("Naapoveda");
-
 ServerArgumentParser::ServerArgumentParser(int argc, char** argv)
 {
     this->argc = argc;
@@ -14,25 +12,24 @@ ServerArgumentParser::ServerArgumentParser(int argc, char** argv)
 
 void ServerArgumentParser::parse()
 {
-    bool helpOption = false;
-    if (this->validateArgumentCount()==4) {
-        helpOption = this->checkForHelpOption();
-    }
+    this->isSetHelp();
     if (!this->argvArrayIter()) { EXIT(UNKNOWN_OPTION)
     }
     this->validatePortRange();
-    if (helpOption)
-        PRINT_HELP
 }
 
-bool ServerArgumentParser::checkForHelpOption()
+bool ServerArgumentParser::isSetHelp()
 {
-    if (strncmp(this->argv[1], "-h", strlen(this->argv[1]))==0) {
-        return true;
+    for (int i = 1; i<this->argc; ++i) {
+        if (strncmp(this->argv[i], "-h", strlen(this->argv[i]))==0) {
+            if (argc==2) {
+                PRINT_HELP
+            }
+            else {
+                EXIT(ARGUMENT_COUNT_ERROR)
+            }
+        }
     }
-    else if (strncmp(this->argv[3], "-h", strlen(this->argv[3]))==0) {
-        return true;
-    }EXIT(UNKNOWN_OPTION)
 }
 
 Server ServerArgumentParser::createServer()

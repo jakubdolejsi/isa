@@ -52,6 +52,8 @@ private:
     int createSocket();
 
     void Connect(int sockfd, sockaddr_in serverAddr);
+
+    void parseResponse(string response);
 };
 
 #endif // ISA_CLIENT_H

@@ -69,8 +69,8 @@ vector<string> RequestParser::parseHeader(const string& inRequest,
 {
     vector<string> arr;
     string parsedRequest;
-    size_t position = inRequest.find('\n');
-    size_t httpPosition = inRequest.substr(0, position).find("HTTP/1.1");
+    size_t newLinePosition = inRequest.find('\n');
+    size_t httpPosition = inRequest.substr(0, newLinePosition).find("HTTP/1.1");
     if (httpPosition==-1) {
         // spatna verze http
         exit(20);
@@ -110,6 +110,7 @@ string RequestParser::searchForContent(const string& inRequest)
     size_t contentLength = 0;
     string content;
     string last;
+    this->request = inRequest;
 
     while (getline(stream, line)) {
         if (line.substr(0, 16)=="Content-Length: ") {
@@ -120,8 +121,12 @@ string RequestParser::searchForContent(const string& inRequest)
             cType = true;
         }
     }
+
     if (cLength && cType) {
         last = this->last(inRequest);
+        if (!last.empty() && contentLength==0) {
+            return content;
+        }
         if (contentLength==strlen(last.c_str())-1) {
             content.append(last);
         }

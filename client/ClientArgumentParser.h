@@ -7,6 +7,16 @@
 
 #define COMPARE(X, Y) (strcmp(X, Y) == 0) ? true : false
 
+#define PRINT_HELP \
+        std::cout << "------------- Information about Client -------------" << std::endl; \
+        std::cout << "Launching: " << std::endl; \
+        std::cout << "./isaclient [-h] -p <port> -H <host> <command>" << std::endl; \
+        std::cout << "<port>: port to connect, must be in range 1 - 65535" << std::endl; \
+        std::cout << "<host>: host to connect, i.e. localhost " << std::endl; \
+        std::cout << "<command>: concrete command coresponding to HTTP API" << std::endl; \
+        std::cout << "For details about running application or commands see README or documentation (manual.pdf)" << std::endl; \
+        exit(0); \
+
 #include "../error/Error.h"
 #include "Client.h"
 #include <cstring>
@@ -204,9 +214,7 @@ private:
      */
     void isSetHost();
 
-    void isSetHelp(const char** argv);
-
-    bool isSetBoolFlag(const char** argv);
+    void isSetHelp();
 };
 
 #endif // ISA_CLIENTARGUMENTPARSER_H

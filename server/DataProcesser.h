@@ -6,7 +6,7 @@
 #define ISA_DATAPROCESSER_H
 
 #define DUPLICATE "409"
-#define NO_DATA "404"
+#define BAD_REQUEST "404"
 #define ZERO_LENGTH "400"
 #define POST_OK "201"
 #define G_P_D_OK "200"
@@ -100,7 +100,7 @@ private:
      * @param item hledany item
      * @return true pokud je duplicita, false pokud je zaznam unikatni ??
      */
-    bool checkDuplicity(const vector<string>& item);
+    bool checkDuplicity(const string& item);
 
     /**
      * @brief Vytvori novou nastenku
@@ -184,6 +184,13 @@ private:
      * @return
      */
     string convertName(string name);
+
+    bool queryParameterParser(const vector<string>& query, int paramCount);
+
+    bool checkBoardNameCorrectness(string boardName);
 };
+
+
+
 
 #endif // ISA_DATAPROCESSER_H

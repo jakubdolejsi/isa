@@ -5,6 +5,16 @@
 #ifndef ISA_SERVERARGUMENTPARSER_H
 #define ISA_SERVERARGUMENTPARSER_H
 
+#define PRINT_HELP \
+        std::cout << "------------- Information about Server -------------" << std::endl; \
+        std::cout << "Launching: " << std::endl; \
+        std::cout << "./isaclient [-h] -p <port>" << std::endl; \
+        std::cout << "<port>: port where server will be running, must be in range 1 - 65535" << std::endl; \
+        std::cout << "For details about running application, see README or documentation (manual.pdf)" << std::endl; \
+        exit(0); \
+
+
+#include <iostream>
 #include "../error/Error.h"
 #include "Server.h"
 
@@ -32,7 +42,7 @@ public:
      * @brief Zkotnrluje flag -h
      * @return
      */
-    bool checkForHelpOption();
+    bool isSetHelp();
 
     /**
      * @brief Vytvori server na portu ulozenym v this->port

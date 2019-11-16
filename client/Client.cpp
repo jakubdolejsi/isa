@@ -96,6 +96,7 @@ string Client::Recv(int sockfd)
         data += buf;
         memset(buf, 0, BUF_SIZE);
 
+//        this->parseResponse(data);
         return (data);
     }
 
@@ -140,3 +141,13 @@ void Client::Connect(int sockfd, sockaddr_in serverAddr)
         SOCKET_ERR("Connection error", CONNECT_SOCK_ERR)
     }
 }
+
+void Client::parseResponse(string response)
+{
+    size_t found = response.find("\r\n\r\n");
+    string x = response.substr(found+4); // posuneme se o 4 znaky dopredu, tj.  2x '\r' + 2x '\n'
+    cout << x << endl;
+}
+
+
+

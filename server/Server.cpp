@@ -48,7 +48,7 @@ void Server::mainLoop()
 
         int pid = fork();
         if (pid==0) {
-
+            close(sockfd);
             mtx.lock();
             this->dataProcesser.setBoards(
                     VectorMapper::deserialize(shared_memory, first));
@@ -64,10 +64,11 @@ void Server::mainLoop()
             shmdt(shared_memory);
 
             this->Send(acceptSockfd, dataToSend);
-            close(sockfd);
+
+            close(acceptSockfd);
             exit(EXIT_SUCCESS);
         }
-        waitpid(pid, nullptr, 0);
+//        waitpid(pid, nullptr, 0);
         //        wait(nullptr);
         close(acceptSockfd);
     }

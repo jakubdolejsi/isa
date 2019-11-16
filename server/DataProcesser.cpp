@@ -2,6 +2,7 @@
 // Created by jakub on 07.10.19.
 //
 
+#include <iostream>
 #include "DataProcesser.h"
 #include "../Helpers/VectorMapper.h"
 
@@ -37,41 +38,78 @@ vector<vector<string>> DataProcesser::getBoards()
 string DataProcesser::processGET(vector<string> params)
 {
     string res;
-
+    if (this->queryParameterParser(params, 1)) {
+        return this->queryFailed(BAD_REQUEST);
+    }
     if (params[1]=="boards") {
+        if (!this->queryParameterParser(params, 2)) {
+            return this->queryFailed(BAD_REQUEST);
+        }
         res = this->getAllBoards();
     }
-    else {
+    else if (params[1]=="board") {
+        if (!this->queryParameterParser(params, 3)) {
+            return this->queryFailed(BAD_REQUEST);
+        }
         res = this->getBoardByName(this->convertName(params[2]));
     }
-    return (!res.empty() ? this->querySucess(G_P_D_OK, res) : this->queryFailed(NO_DATA));
+    else {
+        return this->queryFailed(BAD_REQUEST);
+    }
+    return (!res.empty() ? this->querySucess(G_P_D_OK, res) : this->queryFailed(BAD_REQUEST));
 }
 
 string DataProcesser::processPOST(vector<string> params)
 {
+    if (!this->queryParameterParser(params, 4)) {
+        return this->queryFailed(BAD_REQUEST);
+    }
     string firstParam = params[1]; // boards || board
     string name = params[2];       // <name>
     bool res;
 
     if (firstParam=="boards") { // vtvori novou prazdnou nastenku s nazvem <name>
+        if (!this->checkBoardNameCorrectness(name)) {
+            return this->queryFailed(BAD_REQUEST);
+        }
         res = this->createNewBoard(this->convertName(name));
         return (res ? this->querySucess(POST_OK) : this->queryFailed(DUPLICATE));
     }
-    res = this->insertNewTopic(this->convertName(name), params[3]);
-    return (res ? this->querySucess(POST_OK) : this->queryFailed(NO_DATA));
+    else if (firstParam=="board") {
+        if (params[3].empty()) {
+            return this->queryFailed(ZERO_LENGTH);
+        }
+        res = this->insertNewTopic(this->convertName(name), params[3]);
+        return (res ? this->querySucess(POST_OK) : this->queryFailed(BAD_REQUEST));
+    }
+    else {
+        return this->queryFailed(BAD_REQUEST);
+    }
 }
 
 string DataProcesser::processPUT(vector<string> params)
 {
+    if (!(params[1]=="board")) {
+        return this->queryFailed(BAD_REQUEST);
+    }
+    if (!this->queryParameterParser(params, 5)) {
+        return this->queryFailed(BAD_REQUEST);
+    }
+    if (params[4].empty()) {
+        return this->queryFailed(ZERO_LENGTH);
+    }
     bool res;
     res = this->updateTopicById(this->convertName(params[2]), params[3], params[4]);
 
-    return (res ? this->querySucess(G_P_D_OK) : this->queryFailed(NO_DATA));
+    return (res ? this->querySucess(G_P_D_OK) : this->queryFailed(BAD_REQUEST));
 }
 
 string DataProcesser::processDELETE(vector<string> params)
 {
     bool res;
+    if (!this->queryParameterParser(params, 4)) {
+        return this->queryFailed(BAD_REQUEST);
+    }
     string boardName = params[2];
     if (params[1]=="board") {
         string id = params[3];
@@ -80,7 +118,7 @@ string DataProcesser::processDELETE(vector<string> params)
     else {
         res = this->deleteBoardByName(this->convertName(boardName));
     }
-    return (res ? this->querySucess(G_P_D_OK) : this->queryFailed(NO_DATA));
+    return (res ? this->querySucess(G_P_D_OK) : this->queryFailed(BAD_REQUEST));
 }
 
 string DataProcesser::querySucess(const string& code, const string& data)
@@ -106,9 +144,14 @@ string DataProcesser::queryFailed(const string& code)
     return header;
 }
 
-bool DataProcesser::checkDuplicity(const vector<string>& item)
+bool DataProcesser::checkDuplicity(const string& item)
 {
-    return !(find(this->boards.begin(), this->boards.end(), item)!=this->boards.end());
+    for (vector<int>::size_type i = 0; i!=this->boards.size(); i++) {
+        if (this->boards[i][0]==item) {
+            return false;
+        }
+    }
+    return true;
 }
 
 bool DataProcesser::createNewBoard(const string& boardName)
@@ -116,8 +159,7 @@ bool DataProcesser::createNewBoard(const string& boardName)
 
     vector<string> cont;
     cont.push_back(boardName);
-    bool ok = checkDuplicity(cont);
-    if (!ok) {
+    if (!this->checkDuplicity(boardName)) {
         return false;
     }
     this->boards.push_back(cont);
@@ -127,7 +169,6 @@ bool DataProcesser::createNewBoard(const string& boardName)
 
 bool DataProcesser::insertNewTopic(const string& boardName, string& content)
 {
-
     content.erase(remove(content.begin(), content.end(), '\n'), content.end());
     vector<string> cont;
     cont.push_back(boardName);
@@ -149,9 +190,6 @@ bool DataProcesser::deleteBoardByName(const string& boardName)
         if (this->boards[i][0]==boardName) {
             this->boards.erase(this->boards.begin()+i);
             return true;
-            //                this->boards[i].clear();
-            //                this->boards[i].erase(this->boards[i].begin(),
-            //                this->boards[i].end());
         }
     }
     return false;
@@ -223,7 +261,7 @@ bool DataProcesser::update(vector<string>& board, const string& id,
         pos = board[i].find('.');
         if (board[i].substr(0, pos)==id) { // pokud je cislo pred teckou shodne s zadanym ID
             content.erase(remove(content.begin(), content.end(), '\n'), content.end()); // odstraneni eol
-            pos += 2; // nastaveni position na mezeru na ideckem a teckou
+            pos += 2; // nastaveni position na mezeru za ideckem a teckou
             board[i].replace(pos, string::npos, content);
             return true;
         }
@@ -231,8 +269,7 @@ bool DataProcesser::update(vector<string>& board, const string& id,
     return false;
 }
 
-bool DataProcesser::updateTopicById(const string& boardName, const string& id,
-        const string& content)
+bool DataProcesser::updateTopicById(const string& boardName, const string& id, const string& content)
 {
     bool found = false;
     for (vector<int>::size_type i = 0; i!=this->boards.size(); i++) {
@@ -247,3 +284,21 @@ string DataProcesser::convertName(string name)
 {
     return name.insert(0, "[").append("]");
 }
+
+bool DataProcesser::queryParameterParser(const vector<string>& query, int paramCount)
+{
+    return (query.size()==paramCount);
+}
+
+bool DataProcesser::checkBoardNameCorrectness(string boards)
+{
+    for (char board : boards)
+        if (!isalnum(board)) {
+            return false;
+        }
+    return true;
+}
+
+
+
+

@@ -30,29 +30,4 @@
   fprintf(stderr, TEXT);                                                        \
   exit(EXIT_FAILURE);                                                           \
 
-//
-//#define EXIT(X)                                                                \
-//  ;                                                                            \
-//  switch (X) {                                                                 \
-//  case (10):                                                                   \
-//    fprintf(stderr, "Chybny pocet parametru\n");                               \
-//    exit(X);                                                                   \
-//  case (20):                                                                   \
-//    fprintf(stderr, "Port musi obsahovat pouze cislicen\n");                   \
-//    exit(X);                                                                   \
-//  case (30):                                                                   \
-//    fprintf(stderr, "Zadan spatny prepinac\n");                                \
-//    exit(X);                                                                   \
-//  case (40):                                                                   \
-//    fprintf(stderr, "Spatny rozsah portu\n");                                  \
-//    exit(X);                                                                   \
-//  case (50):                                                                   \
-//    fprintf(stderr, "Spatny format parametru\n");                              \
-//    exit(X);                                                                   \
-//  default:                                                                     \
-//    fprintf(stderr, "Spatny request\n");                                       \
-//    exit(X);                                                                   \
-//  };
-
-
 #endif // MAIN_ERROR_H

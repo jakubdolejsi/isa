@@ -12,6 +12,7 @@ ClientArgumentParser::ClientArgumentParser(int argc, char** argv)
 
 void ClientArgumentParser::parse()
 {
+    this->isSetHelp();
     this->validateArgumentCount();
 
     this->argvArrayIterate();
@@ -287,11 +288,19 @@ void ClientArgumentParser::isSetHost()
     }
 }
 
-void ClientArgumentParser::isSetHelp(const char** argv)
+void ClientArgumentParser::isSetHelp()
 {
+    for (int i = 1; i<this->argc; ++i) {
+        if (strncmp(this->argv[i], "-h", strlen(this->argv[i]))==0) {
+            if (argc==2) {
+                PRINT_HELP
+            }
+            else {
+                EXIT(ARGUMENT_COUNT_ERROR)
+            }
+        }
+    }
+}
 
-}
-bool ClientArgumentParser::isSetBoolFlag(const char** argv)
-{
-    return false;
-}
+
+
