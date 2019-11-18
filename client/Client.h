@@ -13,8 +13,8 @@
 #include <netinet/in.h>
 #include <unistd.h>
 
-#define SA struct sockaddr
-#define BUF_SIZE 4096
+#define SA struct sockaddr // makro pro pretypovani struktury
+#define BUF_SIZE 4096 // velikost prijimanych dat, stejne jak u serveru
 
 #define CREATE_SOCK_ERR                                                        \
   "An error occured while creating socket, check your internet connection\n"
@@ -26,11 +26,6 @@
   cout << " Sending request on " << (C).getHost() << " on port "               \
        << (C).getPort() << " and IP: " << (C).setIpByHost() << " ..." << endl; \
   cout << " Request: " << (C).getRequest() << endl;
-
-#define SOCKET_ERR(P_TEXT, M_TEXT)                                             \
-  perror(P_TEXT);                                                              \
-  fprintf(stderr, M_TEXT);                                                     \
-  exit(13);
 
 
 using std::cout;
@@ -48,30 +43,63 @@ private:
 public:
     Client(string request, string host, int port);
 
-    // ------------------------ DUMP
-    // METHODS------------------------------------------
+    // --------------- DUMP methods ---------------------
     string getRequest();
 
     string getHost();
 
     int getPort();
-    // -----------------------------------------------------------------------------------
+    // --------------------------------------------------
 
-    char* setIpByHost();
 
+    /**
+     * @brief Nastavi ip dle hostname
+     */
+    void setIpByHost();
+
+    /**
+     * @brief Probehne pripojeni k serveru a odeslani requestu
+     */
     void connectToServer();
 
 private:
+    /**
+     * @brief wrapper na socket funkci recv
+     * @param sockfd socket deskriptor id
+     * @return prijata dat
+     */
     string Recv(int sockfd);
 
+    /**
+     * @brief Odesle request, wrapper na socket funkci send
+     * @param sockfd socket deskriptor
+     * @param body obsah requestu
+     */
     void sendRequest(int sockfd, char* body);
 
+    /**
+     * @brief Naplni strukturu sockaddr_in (AF_INET jak rodina adres pro ipv4, port a ip)
+     * @return naplnena struktura
+     */
     sockaddr_in fillStruct();
 
+    /**
+     * @brief Vytvori novy socket(SOCKET_STREAM pro TCP, AF_INET pro ipv4)
+     * @return deskriptor socketu - cele cislo
+     */
     int createSocket();
 
+    /**
+     * @brief wrapper na funkci conncet, preda ji socket deskriptor a skturkturu sockaddr_in pretypovanou na sockaddr
+     * @param sockfd socket deskrpitor
+     * @param serverAddr struktura pro server data
+     */
     void Connect(int sockfd, sockaddr_in serverAddr);
 
+    /**
+     * @brief Naparsovani prijatych dat
+     * @param response prijata data
+     */
     void parseResponse(string response);
 };
 

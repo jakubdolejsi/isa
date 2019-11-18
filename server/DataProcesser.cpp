@@ -49,6 +49,7 @@ string DataProcesser::processGET(vector<string> params)
             return this->queryFailed(NOT_FOUND);
         }
         res = this->getAllBoards();
+        return this->querySucess(G_P_D_OK, res);
     }
     else if (params[1]=="board") {
         if (!this->queryParameterChecker(params, 3)) {

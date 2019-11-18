@@ -30,7 +30,7 @@ int Client::getPort()
 }
 // -----------------------------------------------------------------------------------
 
-char* Client::setIpByHost()
+void Client::setIpByHost()
 {
     hostent* adr;
     char* ip = nullptr;
@@ -41,8 +41,6 @@ char* Client::setIpByHost()
     }
     ip = inet_ntoa(*((struct in_addr*) adr->h_addr_list[0]));
     this->ip = ip;
-
-    return (this->ip);
 }
 
 void Client::connectToServer()
@@ -79,12 +77,7 @@ string Client::Recv(int sockfd)
         memset(buf, 0, BUF_SIZE);
 
         this->parseResponse(data);
-//        return (data);
     }
-
-    //        if (recv(sockfd, buf, BUF_SIZE, 0) < 0) {
-    //            SOCKET_ERR("Recieving socket error: ", RECV_SOCK_ERR);
-    //        }
     return (buf);
 }
 

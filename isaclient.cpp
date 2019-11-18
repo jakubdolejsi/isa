@@ -13,7 +13,4 @@ int main(int argc, char** argv)
     client.setIpByHost();
     client.connectToServer();
 
-    //    DUMP_REQUEST(client)
-
-    //    RETURN_OK
 }

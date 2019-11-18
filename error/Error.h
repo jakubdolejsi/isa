@@ -24,7 +24,7 @@
 #define SOCKET_ERR(P_TEXT, M_TEXT)                                             \
   perror(P_TEXT);                                                              \
   fprintf(stderr, M_TEXT);                                                     \
-  exit(EXIT_FAILURE);
+  exit(-1);
 
 #define EXIT(TEXT)                                                              \
   fprintf(stderr, TEXT);                                                        \

@@ -36,17 +36,15 @@ void Server::mainLoop()
     this->bindSocket(sockfd, serverAddr);
     this->Listen(sockfd);
 
-//    shmctl(sharedMemoryId,IPC_RMID,nullptr);
-//    shmctl(mutexId,IPC_RMID,nullptr);
     sharedMemory = this->createDataSharedMemory(sharedMemoryId);
     mutex = this->createMutexSharedMemory(mutexId);
 
     SignalHandler::setSharedMemoryId(sharedMemoryId);
     SignalHandler::setMutexId(mutexId);
 
-    //TODO Testovaci data...
-    char* x = const_cast<char*>(TEST_DATA);
-    sprintf(sharedMemory, x, sizeof(x));
+//    TODO Testovaci data...
+//    char* x = const_cast<char*>(TEST_DATA);
+//    sprintf(sharedMemory, x, sizeof(x));
 
     sem_init(mutex, 1, 1);
     while (true) {
@@ -134,21 +132,22 @@ int Server::Accept(int sockfd, sockaddr_in clientAddr)
 
 char* Server::createDataSharedMemory(int& sharedMemoryId)
 {
+    // Vztvoreni unikatniho klice na zklade existujiciho souboru a proj_id (nenulove cele cislo)
     int sharedMemoryKey = ftok("isaclient", 65);
-    // Vytvoreni sdileneho segmentu pameti o velikosti
-    sharedMemoryId = shmget(sharedMemoryKey, 1024, 0777 | IPC_CREAT);
+    // Vytvoreni sdileneho segmentu pameti o velikosti 1014 s pravama 666, flag IPC_CREAT znaci vztvoreni noveho segmentu
+    sharedMemoryId = shmget(sharedMemoryKey, 1024, 0666 | IPC_CREAT);
     if (sharedMemoryId<0) {
         perror("Error while creating shared memory: ");
         exit(1);
     }
+    // Pripojeni sdilene pameti na shmid, adresu nechame zvolit system, proto je shmaddr null, shmflag je 0 (READ / WRITE práva)
     return (char*) shmat(sharedMemoryId, nullptr, 0);
 }
 
 sem_t* Server::createMutexSharedMemory(int& mutexId)
 {
     int sharedMemoryKey = ftok("isaserver", 65);
-    // Vytvoreni sdileneho segmentu pameti o velikosti
-    mutexId = shmget(sharedMemoryKey, 1024, 0777 | IPC_CREAT);
+    mutexId = shmget(sharedMemoryKey, 1024, 0666 | IPC_CREAT);
     if (mutexId<0) {
         perror("Error while creating shared memory: ");
         exit(1);
@@ -187,19 +186,13 @@ string Server::Recv(int clientSock)
         SOCKET_ERR("Recv", "Recv error occured ")
     }
     else if (recData==0) {
-        std::cout << "adadad" << std::endl;
+        return "";
     }
-    //    string s(dataProcesser);
     return (string(data));
 }
 
 string Server::processClientData(vector<string> data)
 {
     return (this->dataProcesser.process(move(data)));
-}
-
-void Server::intHandler()
-{
-    std::cout << "Port is: " << this->port << std::endl;
 }
 

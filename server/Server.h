@@ -15,15 +15,12 @@
 #include <semaphore.h>
 #include <pthread.h>
 
-#define SA struct sockaddr
-#define BACKLOG 20 // pocet spojeni
-#define BUFF_SIZE 4096
+#define SA struct sockaddr // makro pro pretypovani struktury
+#define BACKLOG 20 // Maximalni pocet spojeni
+#define BUFF_SIZE 4096 // Velikost bufferu prijimanych dat, vetsi pro skolni projekt nema smysl vytvaret, nehlede na to ze TCP
+// pokud neprijme vsechny data, tak si zbytek kernel ulozi a prijmeme je v dalsim volani
 #define TEST_DATA                                                              \
-  "[Test]\n1. kontent\n2. picaSrac\n3. adadad\n4. hhh\n:\n[DruhyTest]\n1. pica\n2. picaDve\n:\n[X]\n:"
-
-#define O_CREAT 0100
-#define O_EXCL 0200
-#define SEM_NAME "xdolej09_sem"
+  "[PrvniNastenka]\n1. prvniClanek\n2. druhyClanek\n3. TretiClanek\n4. DalsiClanek\n:\n[DruhaNastenka]\n1. prvniClanekDruheNastenky\n2.OpetDalsiClanek\n:\n[TestNastenka]\n:"
 
 class Server {
 
@@ -40,7 +37,6 @@ private:
 
 public:
 
-    static int testX;
     /**
      * @brief Konstruktor slouzici k inicializaci portu a objektu DataProcesser
      * @param port port predany objetekm ServerArgumentParser
@@ -52,7 +48,6 @@ public:
      */
     void mainLoop();
 
-    void intHandler();
 
 private:
     /**
@@ -90,14 +85,17 @@ private:
 
     /**
      * @brief Vytvori sdilenou pamet pro uchovavani dat nastenky
-     * @param segmentId promenna uchovavajici informace o typu sdilene
-     * pameti(flagy, velikost)
+     * @param segmentId identifikator sdielne pameti(flagy, velikost)
      * @return Vrati char pripojeny k sdilene pameti
      */
     char* createDataSharedMemory(int& segmentId);
 
+    /**
+     * @brief Vytvori sdilenou pamet pro mutexy
+     * @param mutexId identifikator sdilene pametu
+     * @return Vrati mutex union pripojeny na sdilenou paomet
+     */
     sem_t* createMutexSharedMemory(int& mutexId);
-
 
 
     /**
@@ -128,7 +126,6 @@ private:
      */
     string processClientData(vector<string> data);
 
-    void endOfData(int sockfd);
 };
 
 #endif // ISA_SERVER_H

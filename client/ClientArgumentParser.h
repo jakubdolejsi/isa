@@ -77,11 +77,6 @@ private:
     void parseCommand(char** inCommand, int& i);
 
     /**
-     * @brief Nastavi help flag
-     */
-    void setHelp();
-
-    /**
      * @brief GET /boards
      * @param i pozice v poli argv
      */
@@ -176,7 +171,6 @@ private:
      */
     void processItemUpdateName(char** inCommand, int& i, char* name, char* id);
 
-    // TODO
     /**
      * @brief Provede parse portu
      * @param inPort
@@ -195,7 +189,11 @@ private:
      */
     void validatePortRange();
 
-    // TODO
+    /**
+     * @brief Overi pritomnost host
+     * @param inHost host
+     * @param i index v poli argumentu
+     */
     void parseHost(char** inHost, int& i);
 
     /**

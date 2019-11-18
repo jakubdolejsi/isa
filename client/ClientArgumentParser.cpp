@@ -64,9 +64,6 @@ void ClientArgumentParser::parseCommand(char** inCommand, int& i)
     }
 }
 
-void ClientArgumentParser::setHelp()
-{
-}
 
 void ClientArgumentParser::processBoards(int& i)
 {
@@ -259,7 +256,6 @@ void ClientArgumentParser::validatePortRange()
     }
 }
 
-// TODO
 void ClientArgumentParser::parseHost(char** inHost, int& i)
 {
     i++;
