@@ -80,7 +80,9 @@ Výstup by měl vypadat takto:
 ├── doc
 ├── error
 │   └── Error.h
-├── Helpers
+├── helpers
+│   ├── SignalHandler.cpp
+│   ├── SignalHandler.h 
 │   ├── VectorMapper.cpp
 │   └── VectorMapper.h
 ├── isaclient.cpp
@@ -96,3 +98,7 @@ Výstup by měl vypadat takto:
     ├── Server.cpp
     └── Server.h
 </pre>
+
+# Omezení / doporučení
+Jelikož server běží v nekonečné smyčce, tak pro jeho správné ukočení 
+je nutno použít signál SIGINT (klávesová zkratka CTRL+C).

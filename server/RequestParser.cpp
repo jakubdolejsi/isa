@@ -71,13 +71,13 @@ vector<string> RequestParser::parseHeader(const string& inRequest,
     size_t httpPosition = inRequest.substr(0, newLinePosition).find("HTTP/1.1");
     if (httpPosition==-1) {
         // spatna verze http
-        exit(20);
+        return (const vector<std::basic_string<char>>&) "";
     }
     parsedRequest = inRequest.substr(0, httpPosition);
     arr = this->toArray(parsedRequest);
     if (!this->checkIfHostIsPresent(inRequest)) {
         // hhtp/1.1 musi obsahovat host
-        exit(65);
+        return (const vector<std::basic_string<char>>&) "";
     }
     if (content) {
         arr.push_back(this->searchForContent(inRequest));
