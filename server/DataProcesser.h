@@ -5,11 +5,11 @@
 #ifndef ISA_DATAPROCESSER_H
 #define ISA_DATAPROCESSER_H
 
-#define DUPLICATE "409"
-#define BAD_REQUEST "404"
-#define ZERO_LENGTH "400"
-#define POST_OK "201"
-#define G_P_D_OK "200"
+#define DUPLICATE "409 CONFLICT"
+#define NOT_FOUND "404 NOT FOUND"
+#define BAD_REQUEST "400 BAD REQUEST"
+#define POST_OK "201 CREATED"
+#define G_P_D_OK "200 OK"
 
 #define COMPARE(X, Y) (strncmp(X, Y, strlen(X)) == 0) ? true : false
 
@@ -78,6 +78,13 @@ private:
      * @return Vraci hhtp odpoved dle validity dotazu
      */
     string processDELETE(vector<string> params);
+
+    /**
+     * Zpracuje neznamou metodu
+     * @param params vektor parametru
+     * @return Http odpoved
+     */
+    string processDefault(vector<string> params);
 
     /**
      * @brief Vrati http hlavicku OK dotazu
@@ -180,13 +187,24 @@ private:
 
     /**
      * @brief Prida hranate zavorky pred a za nazev boardu
-     * @param name
-     * @return
+     * @param name Jmeno nastenky
+     * @return Zkonvertovany nazev nastenky
      */
     string convertName(string name);
 
-    bool queryParameterParser(const vector<string>& query, int paramCount);
+    /**
+     * Zkontroluje, jestli sedi pocet parametru
+     * @param query  Pole parametru dotazu
+     * @param paramCount  pocet parametru, se kterym se porovnava pole query
+     * @return true pokud se rovanji, false pokud ne
+     */
+    bool queryParameterChecker(const vector<string>& query, int paramCount);
 
+    /**
+     * Overi, jestli nastenka obsahuje pouze alfanumericke znaky
+     * @param boardName nazev nastenky
+     * @return true pokud je nazev spravne, false pokud neni
+     */
     bool checkBoardNameCorrectness(string boardName);
 };
 

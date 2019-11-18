@@ -13,6 +13,26 @@
 #include <netinet/in.h>
 #include <unistd.h>
 
+#define SA struct sockaddr
+#define BUF_SIZE 4096
+
+#define CREATE_SOCK_ERR                                                        \
+  "An error occured while creating socket, check your internet connection\n"
+#define CONNECT_SOCK_ERR                                                       \
+  "Check server availability or rightness of specified ports and try again\n"
+#define RECV_SOCK_ERR "An error occured when recieving data from server\n"
+
+#define DUMP_REQUEST(C)                                                        \
+  cout << " Sending request on " << (C).getHost() << " on port "               \
+       << (C).getPort() << " and IP: " << (C).setIpByHost() << " ..." << endl; \
+  cout << " Request: " << (C).getRequest() << endl;
+
+#define SOCKET_ERR(P_TEXT, M_TEXT)                                             \
+  perror(P_TEXT);                                                              \
+  fprintf(stderr, M_TEXT);                                                     \
+  exit(13);
+
+
 using std::cout;
 using std::endl;
 using std::string;
@@ -22,7 +42,6 @@ class Client {
 private:
     string request;
     string host;
-    string content;
     int port;
     char* ip;
 

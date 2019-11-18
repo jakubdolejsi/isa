@@ -6,15 +6,24 @@
 #define ISA_SERVER_H
 
 #include "DataProcesser.h"
-#include <mutex>
 #include <netinet/in.h>
 #include <sys/ipc.h>
 #include <sys/shm.h>
 #include <sys/stat.h>
 #include <sys/wait.h>
 #include <unistd.h>
+#include <semaphore.h>
+#include <pthread.h>
 
-using std::mutex;
+#define SA struct sockaddr
+#define BACKLOG 20 // pocet spojeni
+#define BUFF_SIZE 4096
+#define TEST_DATA                                                              \
+  "[Test]\n1. kontent\n2. picaSrac\n3. adadad\n4. hhh\n:\n[DruhyTest]\n1. pica\n2. picaDve\n:\n[X]\n:"
+
+#define O_CREAT 0100
+#define O_EXCL 0200
+#define SEM_NAME "xdolej09_sem"
 
 class Server {
 
@@ -30,6 +39,8 @@ private:
     DataProcesser dataProcesser;
 
 public:
+
+    static int testX;
     /**
      * @brief Konstruktor slouzici k inicializaci portu a objektu DataProcesser
      * @param port port predany objetekm ServerArgumentParser
@@ -40,6 +51,8 @@ public:
      * @brief Hlavni smycka serveru, ktera zpracovava data a posila odpoved
      */
     void mainLoop();
+
+    void intHandler();
 
 private:
     /**
@@ -77,13 +90,15 @@ private:
 
     /**
      * @brief Vytvori sdilenou pamet pro uchovavani dat nastenky
-     * @param segment_id promenna uchovavajici informace o typu sdilene
+     * @param segmentId promenna uchovavajici informace o typu sdilene
      * pameti(flagy, velikost)
      * @return Vrati char pripojeny k sdilene pameti
      */
-    char* createSharedMemory(int& segment_id);
+    char* createDataSharedMemory(int& segmentId);
 
-    int* createMutexSharedMemory(int& segment_id, struct shmid_ds& shmbuffer);
+    sem_t* createMutexSharedMemory(int& mutexId);
+
+
 
     /**
      * @brief Provede parsing prijatych dat

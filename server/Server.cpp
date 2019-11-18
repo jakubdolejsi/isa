@@ -2,16 +2,14 @@
 // Created by jakub on 02.10.19.
 //
 
+
+
 #include "Server.h"
 #include "../Helpers/VectorMapper.h"
 #include "RequestParser.h"
 #include "../error/Error.h"
-
-#define SA struct sockaddr
-#define BACKLOG 10 // pocet spojeni
-#define BUFF_SIZE 1024
-#define TEST_DATA                                                              \
-  "[Test]\n1. kontent\n2. picaSrac\n3. adadad\n4. hhh\n:\n[DruhyTest]\n1. pica\n2. picaDve\n:\n[X]\n:"
+#include <iostream>
+#include "../Helpers/SignalHandler.h"
 
 Server::Server(int port)
 {
@@ -21,27 +19,36 @@ Server::Server(int port)
 
 void Server::mainLoop()
 {
+
     sockaddr_in serverAddr, clientAddr;
-    mutex mtx;
     int sockfd, acceptSockfd;
     string dataToSend;
     string dataToSharedMemory;
-    int segment_id;
-    char* shared_memory;
-    struct shmid_ds shmbuffer;
     bool first = true;
+    int sharedMemoryId;
+    char* sharedMemory;
+    int mutexId;
+    sem_t* mutex;
 
-    shared_memory = this->createSharedMemory(segment_id);
-
-    shmctl(segment_id, IPC_STAT, &shmbuffer);
-    char* x = const_cast<char*>(TEST_DATA); // nejaka vstupni data..
-    sprintf(shared_memory, x, sizeof(x));
 
     sockfd = this->createSocket();
     serverAddr = this->fillStructure();
     this->bindSocket(sockfd, serverAddr);
     this->Listen(sockfd);
 
+//    shmctl(sharedMemoryId,IPC_RMID,nullptr);
+//    shmctl(mutexId,IPC_RMID,nullptr);
+    sharedMemory = this->createDataSharedMemory(sharedMemoryId);
+    mutex = this->createMutexSharedMemory(mutexId);
+
+    SignalHandler::setSharedMemoryId(sharedMemoryId);
+    SignalHandler::setMutexId(mutexId);
+
+    //TODO Testovaci data...
+    char* x = const_cast<char*>(TEST_DATA);
+    sprintf(sharedMemory, x, sizeof(x));
+
+    sem_init(mutex, 1, 1);
     while (true) {
 
         acceptSockfd = this->Accept(sockfd, clientAddr);
@@ -49,36 +56,36 @@ void Server::mainLoop()
         int pid = fork();
         if (pid==0) {
             close(sockfd);
-            mtx.lock();
+
+            sem_wait(mutex);
             this->dataProcesser.setBoards(
-                    VectorMapper::deserialize(shared_memory, first));
+                    VectorMapper::deserialize(sharedMemory, first));
             dataToSend = this->processClientData(this->parseClientData(acceptSockfd));
             dataToSharedMemory =
                     VectorMapper::serialize(this->dataProcesser.getBoards());
 
             char char_array[dataToSharedMemory.length()+1];
             strcpy(char_array, dataToSharedMemory.c_str());
-            sprintf(shared_memory, char_array, sizeof(char_array));
+            sprintf(sharedMemory, char_array, sizeof(char_array));
+            sem_post(mutex);
 
-            mtx.unlock();
-            shmdt(shared_memory);
+            shmdt(sharedMemory);
 
             this->Send(acceptSockfd, dataToSend);
 
             close(acceptSockfd);
             exit(EXIT_SUCCESS);
         }
-//        waitpid(pid, nullptr, 0);
-        //        wait(nullptr);
+        waitpid(pid, nullptr, 0);
         close(acceptSockfd);
     }
-    close(sockfd);
 }
 
 sockaddr_in Server::fillStructure()
 {
     struct sockaddr_in serverAddr;
     bzero(&serverAddr, sizeof(serverAddr));
+
     serverAddr.sin_family = AF_INET;
     serverAddr.sin_addr.s_addr = htonl(INADDR_ANY);
     serverAddr.sin_port = htons(this->port);
@@ -125,23 +132,28 @@ int Server::Accept(int sockfd, sockaddr_in clientAddr)
     return (acceptedSock);
 }
 
-char* Server::createSharedMemory(int& segment_id)
+char* Server::createDataSharedMemory(int& sharedMemoryId)
 {
-    shmctl(segment_id, IPC_RMID, nullptr);
-    segment_id =
-            shmget(IPC_PRIVATE, 0x6400, IPC_CREAT | IPC_EXCL | S_IRUSR | S_IWUSR);
-
-    return (char*) shmat(segment_id, nullptr, 0);
+    int sharedMemoryKey = ftok("isaclient", 65);
+    // Vytvoreni sdileneho segmentu pameti o velikosti
+    sharedMemoryId = shmget(sharedMemoryKey, 1024, 0777 | IPC_CREAT);
+    if (sharedMemoryId<0) {
+        perror("Error while creating shared memory: ");
+        exit(1);
+    }
+    return (char*) shmat(sharedMemoryId, nullptr, 0);
 }
 
-int* Server::createMutexSharedMemory(int& segment_id,
-        struct shmid_ds& shmbuffer)
+sem_t* Server::createMutexSharedMemory(int& mutexId)
 {
-    shmctl(segment_id, IPC_RMID, nullptr);
-    segment_id =
-            shmget(IPC_PRIVATE, 0x6400, IPC_CREAT | IPC_EXCL | S_IRUSR | S_IWUSR);
-
-    return (int*) shmat(segment_id, nullptr, 0);
+    int sharedMemoryKey = ftok("isaserver", 65);
+    // Vytvoreni sdileneho segmentu pameti o velikosti
+    mutexId = shmget(sharedMemoryKey, 1024, 0777 | IPC_CREAT);
+    if (mutexId<0) {
+        perror("Error while creating shared memory: ");
+        exit(1);
+    }
+    return (sem_t*) shmat(mutexId, nullptr, 0);
 }
 
 vector<string> Server::parseClientData(int acceptSockfd)
@@ -175,7 +187,7 @@ string Server::Recv(int clientSock)
         SOCKET_ERR("Recv", "Recv error occured ")
     }
     else if (recData==0) {
-        this->endOfData(clientSock);
+        std::cout << "adadad" << std::endl;
     }
     //    string s(dataProcesser);
     return (string(data));
@@ -186,9 +198,8 @@ string Server::processClientData(vector<string> data)
     return (this->dataProcesser.process(move(data)));
 }
 
-void Server::endOfData(int sockfd)
+void Server::intHandler()
 {
-    close(sockfd);
-    printf("End...\n");
-    exit(0);
+    std::cout << "Port is: " << this->port << std::endl;
 }
+

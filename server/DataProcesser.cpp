@@ -22,6 +22,9 @@ string DataProcesser::process(vector<string> data)
     else if (method=="PUT") {
         result = this->processPUT(data);
     }
+    else {
+        result = this->processDefault(data);
+    }
     return (result);
 }
 
@@ -38,31 +41,31 @@ vector<vector<string>> DataProcesser::getBoards()
 string DataProcesser::processGET(vector<string> params)
 {
     string res;
-    if (this->queryParameterParser(params, 1)) {
-        return this->queryFailed(BAD_REQUEST);
+    if (this->queryParameterChecker(params, 1)) {
+        return this->queryFailed(NOT_FOUND);
     }
     if (params[1]=="boards") {
-        if (!this->queryParameterParser(params, 2)) {
-            return this->queryFailed(BAD_REQUEST);
+        if (!this->queryParameterChecker(params, 2)) {
+            return this->queryFailed(NOT_FOUND);
         }
         res = this->getAllBoards();
     }
     else if (params[1]=="board") {
-        if (!this->queryParameterParser(params, 3)) {
-            return this->queryFailed(BAD_REQUEST);
+        if (!this->queryParameterChecker(params, 3)) {
+            return this->queryFailed(NOT_FOUND);
         }
         res = this->getBoardByName(this->convertName(params[2]));
     }
     else {
-        return this->queryFailed(BAD_REQUEST);
+        return this->queryFailed(NOT_FOUND);
     }
-    return (!res.empty() ? this->querySucess(G_P_D_OK, res) : this->queryFailed(BAD_REQUEST));
+    return (!res.empty() ? this->querySucess(G_P_D_OK, res) : this->queryFailed(NOT_FOUND));
 }
 
 string DataProcesser::processPOST(vector<string> params)
 {
-    if (!this->queryParameterParser(params, 4)) {
-        return this->queryFailed(BAD_REQUEST);
+    if (!this->queryParameterChecker(params, 4)) {
+        return this->queryFailed(NOT_FOUND);
     }
     string firstParam = params[1]; // boards || board
     string name = params[2];       // <name>
@@ -70,45 +73,45 @@ string DataProcesser::processPOST(vector<string> params)
 
     if (firstParam=="boards") { // vtvori novou prazdnou nastenku s nazvem <name>
         if (!this->checkBoardNameCorrectness(name)) {
-            return this->queryFailed(BAD_REQUEST);
+            return this->queryFailed(NOT_FOUND);
         }
         res = this->createNewBoard(this->convertName(name));
         return (res ? this->querySucess(POST_OK) : this->queryFailed(DUPLICATE));
     }
     else if (firstParam=="board") {
         if (params[3].empty()) {
-            return this->queryFailed(ZERO_LENGTH);
+            return this->queryFailed(BAD_REQUEST);
         }
         res = this->insertNewTopic(this->convertName(name), params[3]);
-        return (res ? this->querySucess(POST_OK) : this->queryFailed(BAD_REQUEST));
+        return (res ? this->querySucess(POST_OK) : this->queryFailed(NOT_FOUND));
     }
     else {
-        return this->queryFailed(BAD_REQUEST);
+        return this->queryFailed(NOT_FOUND);
     }
 }
 
 string DataProcesser::processPUT(vector<string> params)
 {
     if (!(params[1]=="board")) {
-        return this->queryFailed(BAD_REQUEST);
+        return this->queryFailed(NOT_FOUND);
     }
-    if (!this->queryParameterParser(params, 5)) {
-        return this->queryFailed(BAD_REQUEST);
+    if (!this->queryParameterChecker(params, 5)) {
+        return this->queryFailed(NOT_FOUND);
     }
     if (params[4].empty()) {
-        return this->queryFailed(ZERO_LENGTH);
+        return this->queryFailed(BAD_REQUEST);
     }
     bool res;
     res = this->updateTopicById(this->convertName(params[2]), params[3], params[4]);
 
-    return (res ? this->querySucess(G_P_D_OK) : this->queryFailed(BAD_REQUEST));
+    return (res ? this->querySucess(G_P_D_OK) : this->queryFailed(NOT_FOUND));
 }
 
 string DataProcesser::processDELETE(vector<string> params)
 {
     bool res;
-    if (!this->queryParameterParser(params, 4)) {
-        return this->queryFailed(BAD_REQUEST);
+    if (!this->queryParameterChecker(params, 4)) {
+        return this->queryFailed(NOT_FOUND);
     }
     string boardName = params[2];
     if (params[1]=="board") {
@@ -118,8 +121,14 @@ string DataProcesser::processDELETE(vector<string> params)
     else {
         res = this->deleteBoardByName(this->convertName(boardName));
     }
-    return (res ? this->querySucess(G_P_D_OK) : this->queryFailed(BAD_REQUEST));
+    return (res ? this->querySucess(G_P_D_OK) : this->queryFailed(NOT_FOUND));
 }
+
+string DataProcesser::processDefault(vector<string> params)
+{
+    return this->queryFailed(NOT_FOUND);
+}
+
 
 string DataProcesser::querySucess(const string& code, const string& data)
 {
@@ -132,7 +141,6 @@ string DataProcesser::querySucess(const string& code, const string& data)
     }
     string header = string("HTTP/1.1 ")
             .append(code)
-            .append(" OK")
             .append(contentMetaData)
             .append(data);
     return header;
@@ -140,7 +148,7 @@ string DataProcesser::querySucess(const string& code, const string& data)
 
 string DataProcesser::queryFailed(const string& code)
 {
-    string header = string("HTTP/1.1 ").append(code).append(" NOK\r\n\r\n");
+    string header = string("HTTP/1.1 ").append(code).append("\r\n\r\n");
     return header;
 }
 
@@ -285,7 +293,7 @@ string DataProcesser::convertName(string name)
     return name.insert(0, "[").append("]");
 }
 
-bool DataProcesser::queryParameterParser(const vector<string>& query, int paramCount)
+bool DataProcesser::queryParameterChecker(const vector<string>& query, int paramCount)
 {
     return (query.size()==paramCount);
 }

@@ -37,9 +37,7 @@ vector<string> RequestParser::process()
         response = this->processDELETE();
     }
     else {
-
-        exit(99);
-        // TODO ERROR!
+        response = this->processGET(); // default
     }
     return (response);
 }

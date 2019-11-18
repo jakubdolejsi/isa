@@ -4,24 +4,6 @@
 
 #include "Client.h"
 
-#define SA struct sockaddr
-#define BUF_SIZE 4096
-
-#define CREATE_SOCK_ERR                                                        \
-  "An error occured while creating socket, check your internet connection\n"
-#define CONNECT_SOCK_ERR                                                       \
-  "Check server availability or rightness of specified ports and try again\n"
-#define RECV_SOCK_ERR "An error occured when recieving data from server\n"
-
-#define DUMP_REQUEST(C)                                                        \
-  cout << " Sending request on " << (C).getHost() << " on port "               \
-       << (C).getPort() << " and IP: " << (C).setIpByHost() << " ..." << endl; \
-  cout << " Request: " << (C).getRequest() << endl;
-
-#define SOCKET_ERR(P_TEXT, M_TEXT)                                             \
-  perror(P_TEXT);                                                              \
-  fprintf(stderr, M_TEXT);                                                     \
-  exit(13);
 
 Client::Client(string request, string host, int port)
 {
@@ -96,8 +78,8 @@ string Client::Recv(int sockfd)
         data += buf;
         memset(buf, 0, BUF_SIZE);
 
-//        this->parseResponse(data);
-        return (data);
+        this->parseResponse(data);
+//        return (data);
     }
 
     //        if (recv(sockfd, buf, BUF_SIZE, 0) < 0) {
@@ -145,8 +127,15 @@ void Client::Connect(int sockfd, sockaddr_in serverAddr)
 void Client::parseResponse(string response)
 {
     size_t found = response.find("\r\n\r\n");
-    string x = response.substr(found+4); // posuneme se o 4 znaky dopredu, tj.  2x '\r' + 2x '\n'
-    cout << x << endl;
+    string body = response.substr(found+4); // posuneme se o 4 znaky dopredu, tj.  2x '\r' + 2x '\n'
+    string header = response.substr(0, found);
+
+    char char_array[header.length()+1];
+    strcpy(char_array, header.c_str());
+
+    fprintf(stderr, "%s", char_array);
+    cout << endl;
+    cout << body << endl;
 }
 
 
